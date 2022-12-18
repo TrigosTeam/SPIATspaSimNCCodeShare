@@ -893,7 +893,7 @@ save(agg_metrics, file = "Objects/agg_metrics.Rdata")
 load("Objects/agg_metrics.Rdata")
 df_nclusters <- agg_metrics[, c("Image", "n_clusters")]
 
-metadata <- read.delim("Version_1/Metadata.csv",sep=",")
+metadata <- read.delim("data/Version_1/Metadata.csv",sep=",")
 metadata$Image <- 1:845
 
 df_nclusters <- merge(df_nclusters, metadata, by = "Image")
