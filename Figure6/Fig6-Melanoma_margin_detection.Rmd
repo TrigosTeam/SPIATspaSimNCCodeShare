@@ -1,0 +1,158 @@
+---
+title: "Figure 6 Melanoma tumor margin detection"
+author: "Yuzhou Feng"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE}
+library(SPIAT)
+```
+Format the images.
+```{r format}
+markers <- c("DAPI","SOX10","CD68","CD3","CD11c","PDL1","CD20")
+dye_columns_interest <- c("Dye.1.Positive.Nucleus",
+                            "Dye.2.Positive.Nucleus",
+                            "Dye.3.Positive.Nucleus",
+                            "Dye.4.Positive.Cytoplasm",
+                            "Dye.5.Positive.Cytoplasm",
+                            "Dye.6.Positive.Cytoplasm",
+                            "Dye.7.Positive.Cytoplasm")
+intensity_columns_interest <- c("Dye.1.Nucleus.Intensity",
+                                  "Dye.2.Nucleus.Intensity",
+                                  "Dye.3.Nucleus.Intensity",
+                                  "Dye.4.Cytoplasm.Intensity",
+                                  "Dye.5.Cytoplasm.Intensity",
+                                  "Dye.6.Cytoplasm.Intensity",
+                                  "Dye.7.Cytoplasm.Intensity")
+
+# timestamps
+start <- Sys.time()
+primary <- format_halo_to_spe(path = "data/Pan_immune_panel/Primary.csv", markers = markers,
+                                       dye_columns_interest = dye_columns_interest,
+                                       intensity_columns_interest = intensity_columns_interest)
+end <- Sys.time()
+print(end - start)
+REL <- format_halo_to_spe(path = "data/Pan_immune_panel/REL.csv", markers = markers,
+                                       dye_columns_interest = dye_columns_interest,
+                                       intensity_columns_interest = intensity_columns_interest)
+MET <- format_halo_to_spe(path = "data/Pan_immune_panel/MET_complete.csv", 
+                          markers = markers,
+                          dye_columns_interest = dye_columns_interest,
+                          intensity_columns_interest = intensity_columns_interest)
+end <- Sys.time()
+print(end - start)
+
+attr(primary, "name") <- "MEL_Primary"
+attr(REL, "name") <- "MEL_REL"
+attr(MET, "name") <- "MEL_MET"
+
+
+# define celltypes
+celltypes <- c("SOX10", "CD3", "CD20", "PDL1,CD20", "CD68,PDL1", "CD68", "CD68,CD11c,PDL1", "CD68,CD11c", "CD11c","CD11c,PDL1")
+names<- c("MEL","T","B","B","Ma", "Ma", "DC","DC","DC","DC")
+primary <- define_celltypes(primary, categories = celltypes, category_colname = "Phenotype",
+                            names = names, new_colname = "Cell.Type")
+REL <- define_celltypes(REL, categories = celltypes, category_colname = "Phenotype",
+                            names = names, new_colname = "Cell.Type")
+MET <- define_celltypes(MET, categories = celltypes, category_colname = "Phenotype",
+                            names = names, new_colname = "Cell.Type")
+
+plot_cell_categories(primary, c("MEL","T","B","Ma","DC", "Undefined"),
+                     c("red", "blue", "darkgreen", "purple","orange", "darkgray"), feature_colname = "Cell.Type")
+plot_cell_categories(REL, c("MEL","T","B","Ma","DC", "Undefined"),
+                     c("red", "blue", "darkgreen", "purple","orange", "darkgray"), feature_colname = "Cell.Type")
+plot_cell_categories(MET, c("MEL","T","B","Ma","DC", "Undefined"),
+                     c("red", "blue", "darkgreen", "purple","orange", "darkgray"), feature_colname = "Cell.Type")
+
+save(primary, REL,MET, file = "Objects/Pan_immune_spe.RData")
+```
+
+
+```{r}
+# load formatted images
+load("Objects/Pan_immune_spe.RData")
+
+# Primary MEL
+## cell count
+dim(primary)[2]
+
+colnames(colData(primary))
+categories_of_interest <- unique(primary$Cell.Type)
+plot_cell_categories(primary, categories_of_interest,
+                     colour_vector = c("gray","red","darkblue","darkgreen","orange"),
+                     "Cell.Type", layered = TRUE, cex = 0.2)
+
+start <- Sys.time()
+sce_border_MEL1 <-identify_bordering_cells(primary, 
+                                           reference_cell = "MEL", n_to_exclude = 100)
+sce_dist_MEL1 <- calculate_distance_to_margin(sce_border_MEL1)
+sce_struc_MEL1 <- define_structure(spe_object = sce_dist_MEL1, 
+                                   cell_types_of_interest = c("T","B","DC"),
+                                   feature_colname = "Cell.Type")
+plot_cell_categories(sce_struc_MEL1, feature_colname = "Structure")
+end <- Sys.time()
+print(end - start) #Time difference of 9.052007 secs
+
+# MET MEL
+dim(MET)[2]
+categories_of_interest <- unique(MET$Cell.Type)
+plot_cell_categories(MET, categories_of_interest,
+                     colour_vector = c("gray","red","orange","darkblue","darkgreen","purple"),
+                     "Cell.Type", layered = TRUE, cex = 0.2)
+start <- Sys.time()
+sce_border_MEL3 <-identify_bordering_cells(MET, 
+                                           reference_cell = "MEL", n_to_exclude = 100)
+sce_dist_MEL3 <- calculate_distance_to_margin(sce_border_MEL3)
+sce_struc_MEL3 <- define_structure(spe_object = sce_dist_MEL3, 
+                                   cell_types_of_interest = c("Ma","T","B","DC"),
+                                   feature_colname = "Cell.Type")
+plot_cell_categories(sce_struc_MEL3, feature_colname = "Structure")
+end <- Sys.time()
+print(end - start) #Time difference of 23.94411 mins
+
+
+# REL MEL
+dim(REL)[2]
+categories_of_interest <- unique(REL$Cell.Type)
+plot_cell_categories(REL, categories_of_interest,
+                     colour_vector = c("red","gray","darkblue","orange","darkgreen"),
+                     "Cell.Type", cex = 0.2)
+start <- Sys.time()
+sce_border_MEL2 <-identify_bordering_cells(REL, 
+                                           reference_cell = "MEL", n_to_exclude = 100)
+sce_dist_MEL2 <- calculate_distance_to_margin(sce_border_MEL2)
+sce_struc_MEL2 <- define_structure(spe_object = sce_dist_MEL2, 
+                                   cell_types_of_interest = c("Ma","T","B","DC"),
+                                   feature_colname = "Cell.Type")
+plot_cell_categories(sce_struc_MEL2, feature_colname = "Structure")
+end <- Sys.time()
+print(end - start) #Time difference of 8.632202 mins
+
+prop_df1 <- calculate_proportions_of_cells_in_structure(sce_struc_MEL1, 
+                                                        cell_types_of_interest = c("T", "B","DC"),
+                                            feature_colname = "Cell.Type")
+
+prop_df3 <- calculate_proportions_of_cells_in_structure(sce_struc_MEL3, 
+                                                        cell_types_of_interest = c("T", "B","DC", "Ma"),
+                                            feature_colname = "Cell.Type")
+prop_df2 <- calculate_proportions_of_cells_in_structure(sce_struc_MEL2, cell_types_of_interest = c("T", "B","DC"), 
+                                            feature_colname = "Cell.Type")
+
+
+```
+
+```{r}
+prop_df1
+prop_df2
+prop_df3
+```
+
+
+```{r}
+sessionInfo()
+```
