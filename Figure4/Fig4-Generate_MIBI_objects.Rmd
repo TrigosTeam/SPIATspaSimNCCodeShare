@@ -1,0 +1,106 @@
+---
+title: "Figure4 Generate MIBI objects"
+author: "Yuzhou Feng"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# packages and data
+
+```{r message=F}
+library(SPIAT)
+# read in the csv file
+data <- read.csv("data/cellData_with-centroids.csv")
+# add a column of the patient ID
+data$patients_id <- paste("Patient", data$SampleID, sep="_")
+
+##Removing patients without coordinates. Investigate afterwards...
+data <- data[!(data$patients_id %in% c("Patient_42", "Patient_43", "Patient_44")),]
+```
+
+# Data processing
+
+## read MIBI data, save the sce objects in a list
+
+```{r read MIBI}
+## the map is for defining the cell types
+phenotype_map <- data.frame(Markers = c("Tumor", "CD68", "CD20", "CD4,CD3", 
+                                        "CD3", "CD8,CD3", "CD4", "MPO",
+                                        "CD8"),
+                            Name = c("Tumor", "Macrophage", "B_cells", 
+                                     "Helper_T_cell", "T_cell", "Cyto_T_cell", 
+                                     "Helper_T_cell", "Neutrophil", 
+                                     "Cyto_T_cell"))
+
+## format each patient info into an spe object, predict the phenotypes, 
+## define the cells and save
+MIBI_spe <- list()
+p_id <- unique(data$patients_id)
+for (patient in p_id){
+    # get the current patient info
+    local_patient <- subset(data, patients_id == patient)
+
+    # I changed the following code
+    # local_patient$CellID <- paste("Cell", local_patient$CellID, sep="_")
+    # TO
+    local_patient$CellID <- paste("Cell", local_patient$cellLabelInImage, sep="_")
+
+    # get the marker intensities
+    intensity <- t(local_patient[,13:52])
+    intensity <- rbind(intensity, Tumor = local_patient$tumorYN)
+    intensity <- intensity[rownames(intensity) %in% c("CD4", "CD3", "CD8",
+                                                      "CD20", "MPO", "CD68",
+                                                      "Tumor"),]
+    # Added Cell IDs to the intensity matrix ----
+    colnames(intensity) <- local_patient$CellID
+    # -------------------------------------------
+
+    # format spe object
+    local_patient_image <- format_image_to_spe(format = "general",
+                                               intensity_matrix = intensity,
+                                               phenotypes = NA,
+                                               coord_x = local_patient$Xc,
+                                               coord_y = local_patient$Yc)
+
+    # predict phenotypes
+    local_patient_image <- predict_phenotypes(local_patient_image,
+                                              thresholds = NULL,
+                                              tumour_marker = "Tumor",
+                                              baseline_markers=c("CD4", "CD3",
+                                                                 "CD8", "CD20",
+                                                                 "MPO", "CD68"),
+                                              nuclear_marker = NULL,
+                                              reference_phenotypes = FALSE,
+                                              markers_to_phenotype = NULL,
+                                              plot_distribution=FALSE)
+
+    pheno <- unique(colData(local_patient_image)$Phenotype)
+
+    # define cell types
+    other_marker_combinations <- pheno[!(pheno %in% phenotype_map$Markers)]
+
+    phenotypes_map <- rbind(phenotype_map,
+                            cbind(Markers=other_marker_combinations, Name="None"))
+
+    local_patient_image <- define_celltypes(spe_object = local_patient_image,
+                                            categories=unique(pheno),
+                                            category_colname = "Phenotype",
+                                            names = phenotypes_map$
+                                                Name[match(unique(pheno),
+                                                           phenotypes_map$Markers)],
+                                            new_colname = "Cell.Type2")
+
+    attr(local_patient_image, "name") <- patient
+    MIBI_spe[[patient]] <- local_patient_image
+    save(MIBI_spe, file = "Objects/MIBI_spe.Rda")
+    print(patient)
+}
+```
+
+```{r}
+sessionInfo()
+```

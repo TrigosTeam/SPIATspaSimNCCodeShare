@@ -1,0 +1,77 @@
+---
+title: "Figure 4 Analyze simulation objects"
+author: "Yuzhou Feng"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+---
+
+## Packages
+
+```{r package, warning=FALSE, message=FALSE}
+library(SPIAT)
+library(svglite)
+```
+
+## plot the images
+```{r}
+load("Objects/Figure4_simulations.Rda")
+v1 <- c("Tumour","Immune")
+v2 <- c("red","darkgreen")
+feature_colname <- "Cell.Type"
+svg_path <- "spe_plots/gradient"
+for (i in 1:4){
+  sce <- grad_imageL[[i]]
+  svglite(paste(svg_path,i,".svg", sep=""), width = 6, height = 4.8)
+  print(plot_cell_categories(sce, v1, v2, feature_colname))
+  dev.off()
+}
+```
+
+## Analysis
+
+### Using Immune cells as reference cells.
+
+```{r}
+# input variables
+gradient_pos <- seq(50, 800, 50)
+cell_types_of_interest<-c("Immune","Tumour")
+reference_marker = cell_types_of_interest[1]
+target_marker = cell_types_of_interest[2]
+feature_colname <- "Cell.Type"
+categories_of_interest <- cell_types_of_interest
+all_categories_of_interest <- c(categories_of_interest, "Others")
+
+# output variables
+entropy_gradient_list_all <- list()
+peaks_all <- c()
+
+# analysis
+for (i in 1:length(grad_imageL)){
+  sce <- grad_imageL[[i]]
+  # compute the entropy gradient and get the peak
+  grad <- entropy_gradient_aggregated(spe_object = sce, 
+                                      cell_types_of_interest = cell_types_of_interest,
+                                      feature_colname = feature_colname, 
+                                      radii = gradient_pos)
+  entropy_gradient_list_all[[i]] <- grad
+  
+  v <- as.numeric(grad$gradient_df[1,3:(length(gradient_pos)+2)])
+  
+  # plot the gradient
+  svg(paste("gradient_plots/gradient_",i,".svg", sep = ""), width = 6, height = 4)
+  plot(v, type = "b", lty = 2, pch = 16, cex = 1)
+  dev.off()
+  
+  # get the peak of the gradient
+  peak <- grad$peak
+  peaks_all[i] <- peak
+}
+```
+
+
+```{r}
+sessionInfo()
+```

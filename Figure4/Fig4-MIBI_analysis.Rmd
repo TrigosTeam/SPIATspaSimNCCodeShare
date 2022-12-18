@@ -1,0 +1,146 @@
+---
+title: "Figure4 MIBI analysis"
+author: "Yuzhou Feng"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+---
+
+## Packages and load data
+```{r, message = FALSE}
+load("Objects/MIBI_spe.Rda")
+library(SPIAT)
+library(survminer)
+library(survival)
+library(ggplot2)
+library(reshape2)
+```
+
+## plot
+
+```{r}
+# plot P1 and P4
+spe1 <- MIBI_spe[[1]]
+spe1$Cell.Type <- spe1$Cell.Type2
+spe2 <- MIBI_spe[[4]]
+spe2$Cell.Type <- spe2$Cell.Type2
+
+
+mycolors <- c("red", "blue","yellowgreen","lightgreen","pink", "lightblue",
+              "gray", "lightgray")
+mycells <- c("Tumor", "Macrophage", "B_cells", "Helper_T_cell",
+              "T_cell","Neutrophil", "Cyto_T_cell", "None")
+# plot Patient 1
+plot_cell_categories(spe1, mycells, mycolors, "Cell.Type")
+# plot Patient 4
+plot_cell_categories(spe2, mycells, mycolors, "Cell.Type")
+```
+# entropy and gradient
+
+## entropy gradient analysis
+
+```{r}
+# input variables
+# feature_colname <- "Cell.Type2"
+# gradient_positions <- c(50, 75, 100, 125, 150, 175, 200, 250, 300, 350, 400, 450, 500, 550, 600)
+# 
+# # calculate the entropy gradient for each patient
+# entropy_list_peak <- list()
+# for(patient in names(MIBI_spe)){
+#   entropy_list_peak[[patient]] <- entropy_gradient_aggregated(
+#     spe_object = MIBI_spe[[patient]],
+#     cell_types_of_interest = unique(MIBI_spe[[patient]]$Cell.Type2),
+#     feature_colname = feature_colname,
+#     radii = gradient_positions)
+#   print(patient)
+#   save(entropy_list_peak, file="Objects/MIBI_entropy_list_peak_spe.Rdata")
+# }
+
+# Use the above code (commented out) to generate the gradient results.
+load("Objects/MIBI_entropy_list_peak_spe.Rdata")
+
+# get the gradient part
+entropy_list_peak_gradient_df <- vector()
+for(patient in names(entropy_list_peak)){
+  temp <- entropy_list_peak[[patient]]$gradient_df
+  temp$Patient <- patient
+  entropy_list_peak_gradient_df <- rbind(entropy_list_peak_gradient_df,temp)
+}
+
+entropy_list_peak_gradient_df$Cells <- paste(entropy_list_peak_gradient_df$Celltype1,
+                                        entropy_list_peak_gradient_df$Celltype2, sep="_")
+
+entropy_list_peak_gradient_df <- entropy_list_peak_gradient_df[entropy_list_peak_gradient_df$Celltype1 != "None",]
+entropy_list_peak_gradient_df <- entropy_list_peak_gradient_df[entropy_list_peak_gradient_df$Celltype2 != "None",]
+```
+
+```{r warning=FALSE, message=FALSE}
+metadata <- read.delim("data/Formatted_clinical_data.csv", sep=",")
+
+metadata$Patient <- paste("Patient", metadata$InternalId, sep="_")
+
+metadata2 <- metadata[,c("Patient", "TIL_score", "Survival_days_capped.", "Censored", "LATERAL")]
+local_metadata <- metadata2
+rownames(local_metadata) <- local_metadata$Patient
+local_metadata$Patient <- NULL
+
+pairs <- c("Macrophage_Tumor", "B_cells_Tumor", "Helper_T_cell_Tumor",  "Cyto_T_cell_Tumor")
+
+entropy_list_gradient_df <- entropy_list_peak_gradient_df
+
+for(cells in pairs){
+  temp <- entropy_list_gradient_df[entropy_list_gradient_df$Cells == cells,]
+  temp$Celltype1 <- NULL
+  temp$Celltype2 <- NULL  
+  temp$Cells <- NULL
+    
+  temp_norm <- temp[,1:15]
+  
+  for (i in 1:dim(temp_norm)[1]){
+    row_temp <- temp_norm[i,]
+    row_temp <- as.numeric(row_temp)
+    peak <- which(row_temp == max(row_temp, na.rm = T))[1]
+    temp_norm[i,"peak"] <- peak
+  }
+
+  temp_norm <- cbind(temp_norm, Patient = temp[,16])
+
+  # try my method of trend
+  group_attraction <- temp_norm$Patient[temp_norm$peak == 1]
+  group_repulsion <- temp_norm$Patient[temp_norm$peak != 1]
+  temp_norm$peak <- NULL
+  
+  local_metadata_entropy_gradient <- local_metadata
+  local_metadata_entropy_gradient$Entropy_group <- NA
+  local_metadata_entropy_gradient$Entropy_group[rownames(local_metadata_entropy_gradient) %in% group_repulsion] <- "Group_Repulsion"
+  local_metadata_entropy_gradient$Entropy_group[rownames(local_metadata_entropy_gradient) %in% group_attraction] <- "Group_Attraction"
+  
+  
+  temp_norm <- melt(temp_norm)
+  temp_norm$Group <- NA
+  temp_norm$Group[temp_norm$Patient %in% group_repulsion] <- "Repulsion"
+  temp_norm$Group[temp_norm$Patient %in% group_attraction] <- "Attraction"
+  temp_norm$variable <- gsub("Pos_", "", temp_norm$variable)
+  temp_norm$variable <- as.numeric(temp_norm$variable)
+  
+  g <- ggplot(temp_norm, aes(x=variable, y=value))+
+    #geom_point()+
+    geom_line(aes(group=Patient, colour=Group))+
+    ylab("Entropy")+ xlab("Distance")+
+    ggtitle(cells)+
+    theme_bw()
+  print(g)
+  
+  survival <- survfit(Surv(Survival_days_capped., Censored) ~ Entropy_group, data=local_metadata_entropy_gradient)
+  
+  g <- ggsurvplot(survival, 
+             xlab = "Days", 
+             ylab = "Overall survival probability", pval=TRUE)
+  print(g)
+}
+```
+
+```{r reproducibility}
+sessionInfo()
+```

@@ -1,0 +1,96 @@
+---
+title: "Figure 4 Generate simulation objects"
+author: "Yuzhou Feng"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+---
+
+## Packages
+
+```{r package, warning=FALSE, message=FALSE}
+library(spaSim)
+library(SPIAT)
+```
+
+## Simulations
+
+First, simulate separate tumour and immune clusters.
+
+```{r}
+set.seed(610)
+tumour <- multiple_images_with_clusters(bg_sample = bg1, 
+                                         cluster_shape = 2, 
+                                         prop_infiltration = 0, 
+                                         cluster_size = 200, 
+                                         cluster_loc_x = -650, 
+                                         cluster_loc_y = -450,
+                                         plot_image = T)
+# the above function returns a list; need to extract the first element as the image
+tumour <- tumour[[1]] 
+
+set.seed(610)
+grad_image1 <- multiple_images_with_clusters(bg_sample = tumour,
+                                             cluster_shape = 3, 
+                                             prop_infiltration = 0, 
+                                             cluster_size = 300, 
+                                             cluster_loc_x = -300,
+                                             cluster_loc_y = -100,
+                                             plot_image = T)
+grad_image1 <- grad_image1[[1]]
+attr(grad_image1, "name") <- "gradient_1"
+```
+
+Second, simulate a tumour cluster with the same size as the previous tumour clusters, with an immune ring.
+
+```{r}
+set.seed(610)
+grad_image2 <- multiple_images_with_immune_rings(bg_sample = bg1,
+                                                cluster_size = 200,
+                                                ring_shape = 2,
+                                                prop_infiltration = 0,
+                                                ring_width = 80,
+                                                cluster_loc_x = 0,
+                                                cluster_loc_y = 0,
+                                                prop_ring_infiltration = 0)
+grad_image2 <- grad_image2[[1]]
+attr(grad_image2, "name") <- "gradient_2"
+```
+
+Then, simulate tumour cluster infiltrated with immune cells.
+
+```{r}
+set.seed(610) # for reproducibility
+grad_image3 <- multiple_images_with_clusters(bg_sample = bg1, 
+                                              cluster_shape = 2, 
+                                              prop_infiltration = 0.2,
+                                              cluster_size = 200)
+grad_image3 <- grad_image3[[1]]
+attr(grad_image3, "name") <- "gradient_3"
+```
+
+Last, simulate a mixed background.
+
+```{r}
+set.seed(610) # for reproducibility
+grad_image4 <- simulate_mixing(bg_sample = bg1, 
+                               idents = c("Tumour", "Immune", "Others"),
+                               props = c(0.4, 0.2, 0.4), 
+                               plot_image = FALSE)
+
+plot_cell_categories(grad_image4, c("Tumour", "Immune"), c("red", "darkgreen"), "Cell.Type")
+grad_image4 <- format_colData_to_spe(grad_image4)
+
+attr(grad_image4, "name") <- "gradient_4"
+```
+
+```{r}
+grad_imageL <- list(grad_image1, grad_image2, grad_image3, grad_image4)
+save(grad_imageL, file = "Objects/Figure4_simulations.Rda")
+```
+
+```{r}
+sessionInfo()
+```
