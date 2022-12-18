@@ -1,0 +1,99 @@
+---
+title: "MIBI_colocalisation"
+author: "Yuzhou Feng"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+Analysis performed on macrophages and tumor cells.
+
+```{r, message = FALSE}
+library(SPIAT)
+load("../Figure4/Objects/MIBI_spe.Rda")
+
+## Patient 4
+spe <- MIBI_spe[[4]]
+cell_types_of_interest <- c("Tumor","Macrophage")
+
+feature_colname <- "Cell.Type2"
+categories <- c("Tumor", "T_cell", "None", "Helper_T_cell", "B_cells", 
+                "Macrophage", "Cyto_T_cell", "Neutrophil")
+mycolors <- c("red","lightblue","lightgray","lightgreen","pink","darkgreen","yellowgreen","gray")
+
+# svglite::svglite(filename = "patient_spe/plot_Patient4.svg", width = 6, height= 4.8)
+plot_cell_categories(spe, categories, mycolors, feature_colname)
+# dev.off()
+
+# svglite::svglite("patient_gradient/grid_Patient4.svg", width = 6, height= 4.8)
+grid <- grid_metrics(spe, FUN = calculate_entropy, cell_types_of_interest=cell_types_of_interest,
+                     feature_colname=feature_colname, n_split = 20)
+# dev.off()
+
+calculate_percentage_of_grids(grid, threshold = 0.72, above= T)
+#24
+calculate_spatial_autocorrelation(grid)
+#0.119
+
+
+## Patient 16
+spe <- MIBI_spe[[16]]
+cell_types_of_interest <- c("Tumor","Macrophage")
+
+# svglite::svglite("patient_spe/plot_Patient16.svg", width = 6, height= 4.8)
+plot_cell_categories(spe, categories, mycolors, feature_colname)
+# dev.off()
+
+# svglite::svglite("patient_gradient/grid_Patient16.svg", width = 6, height= 4.8)
+grid <- grid_metrics(spe, FUN = calculate_entropy, cell_types_of_interest=cell_types_of_interest,
+                     feature_colname=feature_colname, n_split = 20)
+# dev.off()
+
+calculate_percentage_of_grids(grid, threshold = 0.72, above= T)
+#20.75
+calculate_spatial_autocorrelation(grid)
+#0.0265
+
+
+## Patient 13
+spe <- MIBI_spe[[13]]
+cell_types_of_interest <- c("Tumor","Macrophage")
+
+# svglite::svglite("patient_spe/plot_Patient13.svg", width = 6, height= 4.8)
+plot_cell_categories(spe, categories, mycolors, feature_colname)
+# dev.off()
+
+# svglite::svglite("patient_gradient/grid_Patient13.svg", width = 6, height= 4.8)
+grid <- grid_metrics(spe, FUN = calculate_entropy, cell_types_of_interest=cell_types_of_interest,
+                     feature_colname=feature_colname, n_split = 20)
+# dev.off()
+
+calculate_percentage_of_grids(grid, threshold = 0.72, above= T)
+# 43.25
+calculate_spatial_autocorrelation(grid)
+# -0.002755223
+
+
+## Patient 24
+spe <- MIBI_spe[[24]]
+cell_types_of_interest <- c("Tumor","Macrophage")
+
+# svglite::svglite("patient_spe//plot_Patient24.svg", width = 6, height= 4.8)
+plot_cell_categories(spe, categories, mycolors, feature_colname)
+# dev.off()
+
+# svglite::svglite("patient_gradient/grid_Patient24.svg", width = 6, height= 4.8)
+grid <- grid_metrics(spe, FUN = calculate_entropy, cell_types_of_interest=cell_types_of_interest,
+                     feature_colname=feature_colname, n_split = 20)
+# dev.off()
+
+calculate_percentage_of_grids(grid, threshold = 0.72, above= T)
+#1.5
+calculate_spatial_autocorrelation(grid)
+#-0.002460649
+
+```
+
+
+```{r}
+sessionInfo()
+```

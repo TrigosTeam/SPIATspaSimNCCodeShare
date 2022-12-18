@@ -1,0 +1,103 @@
+---
+title: "Figure 5 Generate Simulation objects"
+author: "Yuzhou Feng"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r message=FALSE}
+library(spaSim)
+library(SPIAT)
+```
+
+# simulations
+
+Simulate separate tumour and immune clusters.
+
+```{r}
+Sim_hetero_image0 <- multiple_images_with_clusters(
+    bg_sample = bg1,
+    cluster_shape = 3, 
+    prop_infiltration = 0,
+    cluster_size = 400, 
+    cluster_loc_x = 400,
+    cluster_loc_y = 300)
+
+Sim_hetero_image0 <- Sim_hetero_image0[[1]]
+
+
+Sim_hetero_image0 <- multiple_images_with_clusters(bg_sample = Sim_hetero_image0,
+                                                    cluster_shape = 2, 
+                                                    prop_infiltration = 0,
+                                                    cluster_size = 160, 
+                                                    cluster_loc_x = -400,
+                                                    cluster_loc_y = -100)
+Sim_hetero_image0 <- Sim_hetero_image0[[1]]
+```
+
+Simulate an immune ring.
+
+```{r}
+Sim_hetero_image1 <- multiple_images_with_immune_rings(bg_sample = bg1,
+                                                       cluster_size = 160,
+                                                       ring_width = 80, 
+                                                       ring_shape = 2,
+                                                       cluster_loc_x = -400,
+                                                       cluster_loc_y = -100,
+                                                       prop_ring_infiltration = 0)
+Sim_hetero_image1 <- Sim_hetero_image1[[1]]
+```
+
+```{r}
+Sim_hetero_image2 <- multiple_images_with_clusters(bg_sample = bg1,
+                                                   cluster_size = seq(200, 800, 300),
+                                                   prop_infiltration = 0.4,
+                                                   cluster_shape = 2,
+                                                   cluster_loc_x = -400,
+                                                   cluster_loc_y = -100)
+```
+
+```{r}
+Sim_hetero_image3 <- multiple_images_with_clusters(
+    bg_sample = bg1, cluster_size = seq(1100, 1500, 400), prop_infiltration = 0.4,
+    cluster_shape = 2, cluster_loc_x = -100, cluster_loc_y = 0)
+```
+
+```{r}
+mix_bg <- Sim_hetero_image3[[2]]
+Sim_hetero_image4 <- multiple_images_with_clusters(bg_sample = mix_bg,
+                                                   cluster_size = seq(200, 800, 300),
+                                                   prop_infiltration = 0,
+                                                   cluster_shape = 2,
+                                                   cluster_loc_x = -400,
+                                                   cluster_loc_y = -100)
+
+Sim_hetero_image5 <- multiple_images_with_clusters(
+    bg_sample = mix_bg, cluster_size = seq(1100, 1500, 400), prop_infiltration = 0,
+    cluster_shape = 2, cluster_loc_x = -100, cluster_loc_y = 0)
+```
+
+Save all images in a list and name them.
+
+```{r}
+Sim_hetero_list <- list(Sim_hetero_image0, Sim_hetero_image1,
+                        Sim_hetero_image2[[1]], Sim_hetero_image2[[2]],
+                        Sim_hetero_image2[[3]], Sim_hetero_image3[[1]],
+                        Sim_hetero_image3[[2]], Sim_hetero_image4[[1]], 
+                        Sim_hetero_image4[[2]], Sim_hetero_image4[[3]], 
+                        Sim_hetero_image5[[1]], Sim_hetero_image5[[2]])
+
+for (i in 1:length(Sim_hetero_list)){
+  sce<-Sim_hetero_list[[i]]
+  attr(sce, "name") <- paste("Sim_hetero",i, sep="_")
+  Sim_hetero_list[[i]] <- sce
+}
+save(Sim_hetero_list, file="Objects/Figure5_simulations.Rda")
+```
+
+
+```{r}
+sessionInfo()
+```

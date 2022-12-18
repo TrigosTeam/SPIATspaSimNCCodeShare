@@ -1,0 +1,80 @@
+---
+title: "Fig5-Analysis_simulations"
+author: "Yuzhou Feng"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(SPIAT)
+library(ggplot2)
+library(svglite)
+```
+
+## Print the images.
+
+```{r}
+load("Objects/Figure5_simulations.Rda")
+categories <- c("Tumour","Immune")
+colour_vector <- c("red","darkgreen")
+for (i in 1:length(Sim_hetero_list)){
+  spe<-Sim_hetero_list[[i]]
+  svglite(paste("spe_plots/",attr(spe,"name"),".svg", sep =""), 
+      width = 6, height=4.8)
+  print(plot_cell_categories(spe,categories, colour_vector, "Cell.Type"))
+  dev.off()
+}
+```
+
+## Analysis
+
+```{r message=FALSE, warning=FALSE, error=FALSE}
+hetero_metrics_df <- data.frame(image_name = NA, proportion = NA, moranI = NA)
+
+cell_types_of_interest <- c("Tumour","Immune")
+feature_colname = "Cell.Type"
+
+for (i in 1:length(Sim_hetero_list)){
+    spe <- Sim_hetero_list[[i]]
+    hetero_metrics_df[i, "image_name"] <- attr(spe,"name")
+    
+    # get the grids
+    svglite(paste("grid_plots/",attr(spe,"name"),".svg", sep =""))
+    grid <- grid_metrics(spe, FUN=calculate_entropy, 
+                         cell_types_of_interest = cell_types_of_interest,
+                         feature_colname=feature_colname,
+                         n_split = 20)
+    dev.off()
+    
+    # calculate proportion of grids
+    p <- calculate_percentage_of_grids(grid, threshold = 0.72, above = T)
+    hetero_metrics_df[i, "proportion"] <- p
+    
+    # calculate moran's I
+    I <- calculate_spatial_autocorrelation(grid)
+    hetero_metrics_df[i, "moranI"] <- I
+    print(i)
+}
+save(hetero_metrics_df, file="Objects/hetero_metrics_df.Rda")
+```
+
+```{r}
+# load("hetero_metrics_df.Rda")
+library(reshape2)
+DF <- hetero_metrics_df
+# DF$image_name <- c(3:7,2,8:12,1)
+DF$image_name <- 1:12
+DF <- melt(DF,  id.vars = "image_name", variable.name = "metrics")
+DF[is.na(DF)] <- 0
+
+g <- ggplot(DF, aes(x = image_name, y = value, group = 12)) +
+  geom_line(linetype = "longdash", colour = "red")+
+  geom_point() +
+  facet_grid(metrics ~ .,scales="free") +
+  theme(axis.text.x = element_text(angle = 90))
+g
+```
