@@ -1,0 +1,147 @@
+---
+title: "Figure3-Analysis"
+author: "Yuzhou Feng"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries
+```{r, message = FALSE}
+library(SPIAT)
+library(reshape2)
+library(ggplot2)
+library(svglite)
+```
+
+# Functions
+
+```{r}
+# the function for average distance between cell types
+average_dist <- function(spe_object,cell_types_of_interest){
+    d <- calculate_pairwise_distances_between_celltypes(
+        spe_object = spe_object, cell_types_of_interest = cell_types_of_interest, 
+        feature_colname = feature_colname)
+    return(mean(d[d$Pair == "Immune/Tumour", "Distance"]))
+}
+
+# function for average minimum distance between cell types
+ave_min_dist <- function(spe_object, cell_types_of_interest){
+    min_dist <- calculate_minimum_distances_between_celltypes(
+        spe_object = spe_object, cell_types_of_interest = cell_types_of_interest, 
+        feature_colname = feature_colname)
+    sum_min_dist <- calculate_summary_distances_between_celltypes(min_dist)
+    ave_min_dist <- sum_min_dist[1, "Mean"]
+    return(ave_min_dist)
+}
+```
+
+`average_percentage_of_cells_within_radius()`, `mixing_score_summary()` 
+and `entropy_gradient_aggregated()` can be directly applied.
+
+# Analysis
+## Visualise the simulated colo images.
+```{r}
+load("Objects/Figure3_simulated.Rda")
+v1 <- c("Tumour","Immune")
+v2 <- c("red","darkgreen")
+feature_colname <- "Cell.Type"
+svg_path <- "spe_plots/Colocalization"
+for (i in 1:7){
+    spe <- colo_imageL[[i]]
+    svglite(paste(svg_path,i,".svg", sep=""), width = 6, height = 4.8)
+    print(plot_cell_categories(spe, v1, v2, feature_colname))
+    dev.off()
+}
+```
+
+## Run the metrics and plot the results.
+```{r}
+colo_metrics_df <- data.frame(image= NA, ave_dist = NA, min_dist = NA, p_radius = NA,
+                              mixing_score = NA, normalised_mixing_score = NA, 
+                              crossK.AUC = NA, 
+                              crossK.crossing = NA)
+
+reference_celltype <- "Tumour"
+target_celltype <- "Immune"
+cell_types_of_interest <- c(reference_celltype, target_celltype)
+feature_colname <- "Cell.Type"
+r <- 500
+
+for (i in c(1:length(colo_imageL))){
+    spe <- colo_imageL[[i]]
+    image_name <- attr(spe, "name")
+    colo_metrics_df[i, "image"] <- image_name
+    
+    # get the average dist between cell types ####
+    ave_dist <- try(average_dist(spe_object = spe, 
+                                 cell_types_of_interest = cell_types_of_interest))
+    if (class(ave_dist) ==  "numeric"){
+        colo_metrics_df[i, "ave_dist"] <- ave_dist
+    }
+    
+    # get the average minimum dist between cell types ####
+    min_dist <- try(ave_min_dist(spe_object = spe, 
+                                 cell_types_of_interest = cell_types_of_interest))
+    if (class(min_dist) == "numeric"){
+        colo_metrics_df[i, "min_dist"] <- min_dist
+    }
+    
+    # get the average percentage of cells within radius ####
+    p_radius <- try(average_percentage_of_cells_within_radius(
+        spe, reference_celltype = reference_celltype, target_celltype = target_celltype, 
+        radius = r, feature_colname = feature_colname))
+    if (class(p_radius) == "numeric"){
+        colo_metrics_df[i, "p_radius"] <- p_radius
+    }
+    
+    # get the (normalised) mixing scores ####
+    ms_t <- try(mixing_score_summary(spe_object = spe, 
+                                     reference_celltype = reference_celltype, 
+                                     target_celltype = target_celltype, 
+                                     feature_colname = feature_colname, 
+                                     radius = r)) 
+    if (class(ms_t) == "data.frame"){
+        colo_metrics_df[i, "mixing_score"] <- ms_t[1,"Mixing_score"]
+        colo_metrics_df[i, "normalised_mixing_score"] <- ms_t[1,"Normalised_mixing_score"]
+    }
+    
+    # get the AUC and crossing percentage of the cross K function ####
+    crossK <- try(calculate_cross_functions(spe, cell_types_of_interest = cell_types_of_interest, 
+                                            feature_colname = feature_colname, plot_results = F))
+    if ("data.frame" %in% class(crossK)){
+        AUC <- AUC_of_cross_function(crossK)
+        crossing <- crossing_of_crossK(crossK)
+        colo_metrics_df[i, "crossK.AUC"] <- AUC
+        colo_metrics_df[i, "crossK.crossing"] <- crossing
+    }
+}
+
+save(colo_metrics_df, file = "Objects/Figure3_metrics.Rda")
+```
+
+
+## Plot the metrics.
+```{r}
+# load("Figure3_metrics.Rda")
+DF <- colo_metrics_df
+DF <- melt(DF,  id.vars = "image", variable.name = "metrics")
+DF$value <- as.numeric(DF$value)
+DF[is.na(DF)] <- 0
+
+g <- ggplot(DF, aes(x = image, y = value, group = 7)) +
+    geom_line(linetype = "longdash", colour = "red")+
+    geom_point() +
+    facet_grid(metrics ~ .,scales="free") +
+    theme(axis.text.x = element_text(angle = 90))
+svglite("Fig3_metrics.svg", width = 5, height = 7)
+plot(g)
+dev.off()
+```
+
+```{r}
+sessionInfo()
+```
