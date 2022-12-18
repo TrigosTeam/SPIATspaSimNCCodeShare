@@ -1,0 +1,144 @@
+---
+title: "Figure 7 Diabetes Neighborhood Analysis"
+author: "Yuzhou Feng"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE}
+library(SPIAT)
+library(ggplot2)
+load("Objects/neighorhoods_other_all.Rdata")
+load("Objects/neighorhoods_immune_all.Rdata")
+
+donors <- read.delim("../Figure6/data/Version_2/Donors.csv",sep=",")
+```
+
+```{r}
+##Clusters
+##Code excludes free cells (samples with just free cells do not appear)
+neighorhoods_other_all$Number_of_cells <- as.numeric(as.character(neighorhoods_other_all$Number_of_cells))
+neighorhoods_other_all$Percentage <- as.numeric(as.character(neighorhoods_other_all$Percentage))
+
+
+##Sizes of clusters
+##At least 2 cells
+
+neighorhoods_other_all$Number_of_cells <- as.numeric(as.character(neighorhoods_other_all$Number_of_cells))
+neighorhoods_other_all$Total_number_of_cells <- as.numeric(as.character(neighorhoods_other_all$Total_number_of_cells))
+neighorhoods_other_all$Percentage <- as.numeric(as.character(neighorhoods_other_all$Percentage))
+neighorhoods_other_all <- neighorhoods_other_all[neighorhoods_other_all$Number_of_cells >= 10,]
+neighorhoods_other_all <- neighorhoods_other_all[neighorhoods_other_all$Neighborhood != "Free_cell",]
+neighorhoods_other_all <- neighorhoods_other_all[!is.na(neighorhoods_other_all$Neighborhood),]
+neighorhoods_other_all$Stage <- donors$stage[match(neighorhoods_other_all$Slide, donors$slide)]
+
+neighorhoods_other_all$Part <- donors$part[match(neighorhoods_other_all$Slide, donors$slide)]
+
+neighorhoods_other_size <- unique(neighorhoods_other_all[,c("Neighborhood", "Total_number_of_cells", "Patient", "Stage")])
+neighorhoods_other_size <- aggregate( Total_number_of_cells ~ Patient+Stage, neighorhoods_other_size, mean)
+
+library(ggplot2)
+ggplot(neighorhoods_other_size, aes(x=Stage, y=Total_number_of_cells))+
+  geom_boxplot(aes(fill=Stage))+
+  ylab("Stromal cluster size")+
+  theme_bw()+
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+
+neighorhoods_other_endothelial <- neighorhoods_other_all[neighorhoods_other_all$Cell.Type == "endothelial",]
+neighorhoods_other_endothelial_agg <- aggregate(Percentage ~ Patient+Stage, neighorhoods_other_endothelial, mean)
+neighorhoods_other_endothelial_agg$Stage <- factor(neighorhoods_other_endothelial_agg$Stage,
+                                                   levels = c("Non-diabetic", "Onset", "Long-duration"))
+##PAPER
+ggplot(neighorhoods_other_endothelial_agg, aes(x=Stage, y=Percentage))+
+  geom_boxplot(aes(fill=Stage))+
+  ylab("Percentage of endothelial cells")+
+  theme_bw()+
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+
+neighorhoods_other_all_agg <- unique(neighorhoods_other_all[,c("Neighborhood", "Patient", "Slide", "Stage")])
+neighorhoods_other_all_agg <- aggregate(Neighborhood ~ Patient + Stage, neighorhoods_other_all_agg, length)
+neighorhoods_other_all_agg$Stage <- factor(neighorhoods_other_all_agg$Stage,
+                                           levels=c("Non-diabetic", "Onset", "Long-duration"))
+
+##PAPER
+ggplot(neighorhoods_other_all_agg, aes(x=Stage, y=Neighborhood))+
+  geom_boxplot(aes(fill=Stage))+
+  ylab("Number of stromal clusters")+
+  theme_bw()+
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+
+
+
+
+neighorhoods_immune_all$Number_of_cells <- as.numeric(as.character(neighorhoods_immune_all$Number_of_cells))
+neighorhoods_immune_all$Percentage <- as.numeric(as.character(neighorhoods_immune_all$Percentage))
+
+neighorhoods_immune_all <- neighorhoods_immune_all[neighorhoods_immune_all$Number_of_cells >= 10,]
+neighorhoods_immune_all <- neighorhoods_immune_all[neighorhoods_immune_all$Neighborhood != "Free_cell",]
+neighorhoods_immune_all <- neighorhoods_immune_all[!is.na(neighorhoods_immune_all$Neighborhood),]
+neighorhoods_immune_all$Stage <- donors$stage[match(neighorhoods_immune_all$Slide, donors$slide)]
+neighorhoods_immune_all$Part <- donors$part[match(neighorhoods_immune_all$Slide, donors$slide)]
+
+
+neighorhoods_immune_all_agg <- aggregate(Percentage ~ Patient+Cell.Type+Stage, neighorhoods_immune_all, mean)
+neighorhoods_immune_all_agg$Stage <- factor(neighorhoods_immune_all_agg$Stage,
+                                            levels = c("Non-diabetic", "Onset", "Long-duration"))
+##PAPER
+ggplot(subset(neighorhoods_immune_all_agg, Cell.Type == "Tc"), aes(x=Stage, y=Percentage))+
+  geom_boxplot(aes(fill = Stage))+
+  facet_grid(.~Cell.Type)+
+  ylab("Percentage of immune cells")+
+  theme_bw()+
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+
+ggplot(neighorhoods_immune_all_agg, aes(x=Stage, y=Percentage))+
+  geom_boxplot(aes(fill=Cell.Type))+
+  #facet_grid(.~Cell.Type)+
+  ylab("Percentage of immune cells")
+
+
+neighorhoods_immune_all_agg <- unique(neighorhoods_immune_all[,c("Neighborhood", "Patient", "Slide", "Stage")])
+neighorhoods_immune_all_agg <- aggregate(Neighborhood ~ Patient + Stage, neighorhoods_immune_all_agg, length)
+
+neighorhoods_immune_all_agg$Stage <- factor(neighorhoods_immune_all_agg$Stage,
+                                            levels=c("Non-diabetic", "Onset", "Long-duration"))
+
+##PAPER
+ggplot(neighorhoods_immune_all_agg, aes(x=Stage, y=Neighborhood))+
+  geom_boxplot(aes(fill=Stage))+
+  ylab("Number of immune clusters")+
+  theme_bw()+
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+
+neighorhoods_immune_size <- unique(neighorhoods_immune_all[,c("Neighborhood", "Total_number_of_cells", "Patient", "Stage")])
+neighorhoods_immune_size$Total_number_of_cells <- as.numeric(as.character(neighorhoods_immune_size$Total_number_of_cells))
+neighorhoods_immune_size <- aggregate( Total_number_of_cells ~ Patient+Stage, neighorhoods_immune_size, mean)
+neighorhoods_immune_size$Stage <- factor(neighorhoods_immune_size$Stage,
+                                         levels=c("Non-diabetic", "Onset", "Long-duration"))
+
+ggplot(neighorhoods_immune_size, aes(x=Stage, y=Total_number_of_cells))+
+  geom_boxplot(aes(fill=Stage))+
+  ylab("Immune cluster size")+
+  theme_bw()+
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+```
+
+```{r}
+sessionInfo()
+```

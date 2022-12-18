@@ -1,0 +1,143 @@
+---
+title: "Figure 7 Colon CA Extract metrics"
+author: "Yuzhou Feng"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE}
+library(SPIAT)
+library(ggplot2)
+library("RColorBrewer")
+library(dplyr)
+library(reshape2)
+
+data <- read.delim("data/CRC_clusters_neighborhoods_markers.csv", sep=",")
+```
+
+```{r}
+# define a function to extract metrics
+run_basic_metrics <- function(local_patient, phenotype_map){
+  local_patient_pheno <- local_patient$ClusterName
+  local_patient_intensity <- t(local_patient[,c(13:61, 70:78)])
+  colnames(local_patient_intensity) <- local_patient$CellID
+  
+  rownames(local_patient_intensity) <-
+      c("CD44","FOXP3","CD8","p53","GATA3","CD45","T.bet","beta.catenin","HLA.DR","PD.L1",
+        "Ki67","CD45RA","CD4","CD21","MUC.1","CD30","CD2","Vimentin","CD20","LAG.3",
+        "Na.K.ATPase","CD5","IDO.1","Cytokeratin","CD11b","CD56","aSMA","BCL.2",
+        "CD25","CD11c","PD.1","Granzyme.B","EGFR","VISTA","CD15","ICOS","Synaptophysin",
+        "GFAP","CD7","CD3","Chromogranin.A","CD163","CD45RO","CD68","CD31","Podoplanin",
+        "CD34","CD38","CD138","HOECHST1","CDX2","Collagen.IV","CD194","MMP9",
+        "CD71","CD57","MMP12","DRAQ5")
+  
+  local_patient_image <- format_image_to_spe(format = "general", intensity_matrix = local_patient_intensity,
+                                             phenotypes = local_patient_pheno, coord_x = local_patient$X.X, coord_y = local_patient$Y.Y)
+  
+  local_patient_image <- define_celltypes(local_patient_image,
+                                          category_colname = "Phenotype",
+                                          names = phenotypes_map$Type,
+                                          categories = phenotypes_map$Name,
+                                          new_colname = "Cell.Type2") 
+  
+  local_patient_image <- define_celltypes(local_patient_image,
+                                          category_colname = "Phenotype",
+                                          names = phenotypes_map$Name,
+                                          categories = phenotypes_map$Name,
+                                          new_colname = "Cell.Type") 
+  
+  number_colors <- length(unique(local_patient_pheno))
+  mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(number_colors)
+  
+  plot_cell_categories(local_patient_image, unique(local_patient_pheno), mycolors, "Phenotype")
+
+  p_cells <- calculate_cell_proportions(local_patient_image, feature_colname="Cell.Type")
+  
+  phenotypes <- phenotypes_map$Name
+  
+  NNI_df <- vector()
+  for(pheno in phenotypes){
+    NNI <- average_nearest_neighbor_index(local_patient_image, 
+                                          reference_celltypes=pheno, 
+                                          feature_colname="Cell.Type", p_val = 1e-2)
+    NNI_df <- rbind(NNI_df, c(pheno, NNI$ANN_index, NNI$pattern, NNI$`p-value`))
+  }
+  
+  colnames(NNI_df) <- c("Cell_type", "ANNI", "Pattern", "p_value")
+  NNI_df <- as.data.frame(NNI_df)
+  
+  
+  aveg_min_dist <- average_minimum_distance(local_patient_image)
+  ##Return aveg_min_dist
+  
+  
+  clusters_list <- identify_neighborhoods(
+      local_patient_image, method = "hierarchical", min_neighborhood_size = 1,
+    cell_types_of_interest = c("CD4+ T cells CD45RO+", "CD68+CD163+ macrophages", 
+                               "plasma cells", "CD8+ T cells", "Tregs", "CD4+ T cells",
+                               "CD11c+ DCs", "B cells", "CD11b+CD68+ macrophages",
+                               "NK cells", "CD68+ macrophages GzmB+", "CD68+ macrophages",
+                               "CD11b+ monocytes","CD4+ T cells GATA3+", 
+                               "CD163+ macrophages", "CD3+ T cells"),
+    radius = aveg_min_dist*3,
+    feature_colname = "Cell.Type")
+  
+  T_cell_clusters_list <- identify_neighborhoods(
+      local_patient_image, method = "hierarchical", min_neighborhood_size = 1,
+      cell_types_of_interest = c("CD4+ T cells CD45RO+", "CD8+ T cells", 
+                                 "Tregs", "CD4+ T cells", "CD4+ T cells GATA3+", 
+                                 "CD3+ T cells"),
+      radius = aveg_min_dist*3, feature_colname = "Cell.Type")
+  
+  macrophages_clusters_list <- identify_neighborhoods(
+      local_patient_image, method = "hierarchical", min_neighborhood_size = 1,
+      cell_types_of_interest = c("CD68+CD163+ macrophages", "CD11b+CD68+ macrophages",
+                                 "CD68+ macrophages GzmB+",  "CD68+ macrophages", 
+                                 "CD163+ macrophages"),
+      radius = aveg_min_dist*3,  feature_colname = "Cell.Type")
+  
+
+  return(list(
+    local_patient_image = local_patient_image,
+    pro_cells = p_cells,
+    NNI_df = NNI_df,
+    ave_min_dist = aveg_min_dist,
+    clusters = clusters_list,
+    T_cell_clusters = T_cell_clusters_list,
+    macrophages_clusters = macrophages_clusters_list
+  ))
+}
+
+# phenotypes map
+phenotypes_map <- data.frame(
+    Name = c("granulocytes","vasculature","CD4+ T cells CD45RO+","tumor cells",
+             "stroma","CD68+CD163+ macrophages","adipocytes","plasma cells",
+             "CD8+ T cells","dirt","Tregs","CD4+ T cells", "CD11c+ DCs",
+             "B cells","CD11b+CD68+ macrophages","smooth muscle", "undefined",
+             "tumor cells / immune cells","immune cells","NK cells","nerves",
+             "CD68+ macrophages GzmB+","CD68+ macrophages","lymphatics",
+             "CD11b+ monocytes","CD4+ T cells GATA3+",
+             "immune cells / vasculature","CD163+ macrophages","CD3+ T cells"),
+    Type = c("Immune", "Vasculature", "Immune", "Tumor", "Stroma", "Immune", 
+             "Adipocytes", "Immune", "Immune", "dirt",
+             "Immune", "Immune", "Immune", "Immune", "Immune","Muscle", 
+             "Undefined", "Undefined", "Immune", "Immune","Nerves", 
+             "Immune", "Immune", "Lymphatics", "Immune", "Immune", 
+             "Undefined","Immune", "Immune"))
+
+data$patients_id <- paste("Patient", data$patients, data$File.Name, sep="_")
+
+# extract metrics
+basic_metrics_list <- list()
+
+for(patient in unique(data$patients_id)){
+  local_patient <- subset(data, patients_id == patient)
+  local_patient$CellID <- paste("Cell", local_patient$CellID, sep="_")
+  
+  basic_metrics_list[[patient]] <- run_basic_metrics(local_patient, phenotype_map)
+  save(basic_metrics_list, file="Objects/basic_metrics_list.Rdata")
+}

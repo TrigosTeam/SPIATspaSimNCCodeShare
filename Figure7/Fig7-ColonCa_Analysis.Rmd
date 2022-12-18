@@ -1,0 +1,269 @@
+---
+title: "Figure 7 Colon CA Analysis"
+author: "Yuzhou Feng"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages and data
+
+```{r, message=FALSE}
+library(SPIAT)
+library(clinfun)
+library(ggplot2)
+load("Objects/basic_metrics_list.Rdata")
+metadata <- read.delim("data/Schurch_CODEX_metadata.txt")
+```
+
+# Analysis
+```{r}
+metadata$Group_name <- ifelse(metadata$Group == 1, "Crohn",
+                              ifelse(metadata$Group == 2, "Diffuse", NA))
+
+metadata$Patient_ID <- paste("Patient", metadata$Patient, sep="_")
+
+
+NNI_table <- vector()
+for(patient in unique(metadata$Patient_ID)){
+  local_TMAs <- names(basic_metrics_list)[grep(paste(patient, "_", sep=''), names(basic_metrics_list))]
+  temp1 <- basic_metrics_list[[local_TMAs[1]]]$NNI_df
+  temp2 <- basic_metrics_list[[local_TMAs[2]]]$NNI_df
+  temp3 <- basic_metrics_list[[local_TMAs[3]]]$NNI_df
+  temp4 <- basic_metrics_list[[local_TMAs[4]]]$NNI_df
+  
+  temp_all <- rbind(cbind(temp1, ID = local_TMAs[1]),
+                    cbind(temp2, ID = local_TMAs[2]),
+                    cbind(temp3, ID = local_TMAs[3]),
+                    cbind(temp4, ID = local_TMAs[4]))
+  
+  temp_table <- as.data.frame(table(temp_all[,c(1,3)]))
+  temp_table <- temp_table[temp_table$Cell_type == "B cells",]
+  
+  temp_table$Pattern[temp_table$Pattern == "Dispersed"] <- "Random"
+  temp_table <- aggregate(Freq ~ Cell_type + Pattern, temp_table, sum)
+  temp_table <- cbind(patient, temp_table)
+  NNI_table <- rbind(NNI_table, temp_table)
+}
+
+NNI_table$Group <- metadata$Group_name[match(NNI_table$patient, metadata$Patient_ID)]
+
+ggplot(NNI_table, aes(x=patient, y=Freq))+
+  geom_bar(stat='identity', aes(fill=Pattern))+
+  facet_grid(.~Group, scales="free")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+NNI_table_clus <- NNI_table[NNI_table$Pattern == "Clustered",]
+sum(NNI_table_clus$Freq)
+
+#15/17 crohn samples with at least 1 region
+#5/18 diffused samples with at least 1 region
+
+fisher.test(cbind(c(15,2), c(5,13)), alternative="greater") ## =)
+
+
+######
+cluster_composition <- vector()
+
+for(patient in names(basic_metrics_list)){
+  temp <- composition_of_neighborhoods(basic_metrics_list[[patient]]$clusters, feature_colname = "Cell.Type")
+  cluster_composition <- rbind(cluster_composition, cbind(patient, temp))
+}
+
+free_cell_composition <-cluster_composition[cluster_composition$Neighborhood == "Free_cell",]
+cluster_composition <- cluster_composition[cluster_composition$Neighborhood != "Free_cell",]
+small_cluster_composition <- cluster_composition[cluster_composition$Total_number_of_cells < 10,]
+free_cell_composition <- rbind(free_cell_composition, small_cluster_composition)
+
+
+##Free cell analysis
+
+free_cell_composition$Patient_ID <- substr(free_cell_composition$patient, 1,10)
+free_cell_composition$Patient_ID <- gsub("_$", "", free_cell_composition$Patient_ID)
+free_cell_composition$Group <- metadata$Group_name[match(free_cell_composition$Patient_ID, metadata$Patient_ID)]
+
+free_cell_agg <- aggregate(Number_of_cells ~ patient+Cell.Type+Patient_ID+Group, free_cell_composition, sum)
+total_free <- aggregate(Number_of_cells ~patient, free_cell_agg, sum)
+
+free_cell_agg$Total_free_cells <- total_free$Number_of_cells[match(free_cell_agg$patient, total_free$patient)]
+
+free_cell_agg$Percentage <- (free_cell_agg$Number_of_cells/free_cell_agg$Total_free_cells)*100
+
+free_cell_agg2 <- aggregate(Percentage ~ Cell.Type+Patient_ID, free_cell_agg, mean)
+
+##PAPER
+ggplot(free_cell_agg, aes(x=patient, y=Percentage))+
+  geom_bar(stat='identity', aes(fill=Cell.Type))+
+  ggtitle("Free cells")+
+  xlab("Image")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+##Clusters should have at least 10 cells
+cluster_composition <- cluster_composition[cluster_composition$Total_number_of_cells >= 10,]
+
+##Total clustered cells
+
+total_cluster_composition <- aggregate(Number_of_cells ~ patient+Cell.Type, cluster_composition, sum)
+
+total_clustered <- aggregate(Number_of_cells ~patient, total_cluster_composition, sum)
+
+total_cluster_composition$Total_clustered_cells <- total_clustered$Number_of_cells[match(total_cluster_composition$patient, total_clustered$patient)]
+
+total_cluster_composition$Percentage <- (total_cluster_composition$Number_of_cells/total_cluster_composition$Total_clustered_cells)*100
+
+total_cluster_composition$Patient_ID <- substr(total_cluster_composition$patient, 1,10)
+total_cluster_composition$Patient_ID <- gsub("_$", "", total_cluster_composition$Patient_ID)
+total_cluster_composition$Group <- metadata$Group_name[match(total_cluster_composition$Patient_ID, metadata$Patient_ID)]
+
+colnames(total_cluster_composition)[3] <- "N_clustered_cells"
+
+##PAPER
+ggplot(total_cluster_composition, aes(x=patient, y=Percentage))+
+  geom_bar(stat='identity', aes(fill=Cell.Type))+
+  ggtitle("Clustered cells")+
+  xlab("Image")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+#Comparison of proportion of each cell type between free and clustered populations
+total_cluster_composition2 <- total_cluster_composition[,c("patient", "Cell.Type", "Percentage", "Patient_ID")]
+colnames(total_cluster_composition2)[3] <- "Percentage_within_clustered"
+
+total_cluster_composition2_agg <- aggregate(Percentage_within_clustered ~ Cell.Type+Patient_ID, total_cluster_composition2, mean)
+
+#Make sure that all samples are represented
+samples_free <- unique(free_cell_agg2[,c("Patient_ID", "Cell.Type")])
+samples_clustered <- unique(total_cluster_composition2_agg[,c("Patient_ID", "Cell.Type")])
+sum(!(paste(samples_clustered[,1], samples_clustered[,2]) %in% 
+      paste(samples_free[,1], samples_clustered[,2])))
+
+samples_all <- unique(rbind(samples_free, samples_clustered))
+
+
+samples_all$Percentage_within_clustered <- total_cluster_composition2_agg$Percentage_within_clustered[match(paste(samples_all$Patient_ID, samples_all$Cell.Type),
+                                                                                                            paste(total_cluster_composition2_agg$Patient_ID, total_cluster_composition2_agg$Cell.Type))]
+samples_all$Percentage_within_free <- free_cell_agg2$Percentage[match(paste(samples_all$Patient_ID, samples_all$Cell.Type),
+                                                                                  paste(free_cell_agg2$Patient_ID, free_cell_agg2$Cell.Type))]
+samples_all$Percentage_within_clustered[is.na(samples_all$Percentage_within_clustered)] <- 0
+samples_all$Percentage_within_free[is.na(samples_all$Percentage_within_free)] <- 0
+
+
+p_free_clustered <- vector()
+for(cell_type in unique(samples_all$Cell.Type)){
+  temp <- samples_all[samples_all$Cell.Type == cell_type,]
+  temp_free <- temp$Percentage_within_free
+  temp_clustered <- temp$Percentage_within_clustered
+  p_up <- wilcox.test(temp_free, temp_clustered, alternative="greater")$p.value
+  p_down <- wilcox.test(temp_free, temp_clustered, alternative="less")$p.value
+  p_free_clustered <- rbind(p_free_clustered,
+                            c(cell_type, p_up, p_down))
+}
+p_free_clustered <- as.data.frame(p_free_clustered)
+colnames(p_free_clustered) <- c("Cell.Type", "Higher_free", "Higher_clustered")
+p_free_clustered$Higher_free <- as.numeric(as.character(p_free_clustered$Higher_free))
+p_free_clustered$Higher_clustered <- as.numeric(as.character(p_free_clustered$Higher_clustered))
+
+p_free_clustered$Higher_free_adj <- p.adjust(p_free_clustered$Higher_free, method="BH")
+p_free_clustered$Higher_clustered_adj <- p.adjust(p_free_clustered$Higher_clustered, method="BH")
+###CD68+ macrophages, NK cells, Tregs were higher in the free population
+
+
+
+total_cluster_composition$N_free_cells <- free_cell_agg$Number_of_cells[match(paste(total_cluster_composition$patient, total_cluster_composition$Cell.Type),
+                                                                                  paste(free_cell_agg$patient, free_cell_agg$Cell.Type))]
+total_cluster_composition$N_free_cells[is.na(total_cluster_composition$N_free_cells)] <- 0
+total_cluster_composition$Total_cells <- total_cluster_composition$Total_clustered_cells+total_cluster_composition$N_free_cells
+total_cluster_composition$Percentage_free <- (total_cluster_composition$N_free_cells/total_cluster_composition$Total_cells)*100
+total_cluster_composition$Percentage_clustered <- (total_cluster_composition$Total_clustered_cells/total_cluster_composition$Total_cells)*100
+
+###Do analysis by cluster size. Does the composition change?
+
+cluster_composition$Class <- ifelse(cluster_composition$Total_number_of_cells < 50, "Cluster_less_50",
+                                    ifelse(cluster_composition$Total_number_of_cells < 100, "Cluster_less_100",
+                                      ifelse(cluster_composition$Total_number_of_cells < 500, "Cluster_less_500",
+                                           ifelse(cluster_composition$Total_number_of_cells < 1000, "Cluster_less_1000", "Cluster_greater_1000"))))
+
+cluster_composition$Patient_ID <- substr(cluster_composition$patient, 1,10)
+cluster_composition$Patient_ID <- gsub("_$", "", cluster_composition$Patient_ID)
+
+total_comp_clusters <- cluster_composition[,c("patient", "Patient_ID", "Cell.Type", "Percentage", "Class")]
+total_comp_free <- free_cell_agg[,c("patient", "Patient_ID", "Cell.Type", "Percentage")]
+total_comp_free$Class <- "Free"
+
+total_composition <- rbind(total_comp_clusters,total_comp_free)
+total_composition$Group <- metadata$Group_name[match(total_composition$Patient_ID, metadata$Patient_ID)]
+
+total_composition$Class <- factor(total_composition$Class, levels=c("Free", "Cluster_less_50", 
+                                                                    "Cluster_less_100", "Cluster_less_500", 
+                                                                    "Cluster_less_1000", "Cluster_greater_1000"))
+
+
+
+#Per patient
+total_composition_mean <- aggregate(Percentage ~ Patient_ID+Cell.Type+Class+Group, total_composition, mean)
+
+total_composition_mean <- total_composition_mean[total_composition_mean$Class != "Free",]
+
+library(clinfun)
+trend_p <- vector()
+for(cell_type in unique(total_composition_mean$Cell.Type)){
+  temp <- total_composition_mean[total_composition_mean$Cell.Type == cell_type,]
+  g <- factor(temp$Class, levels=c("Cluster_less_50", "Cluster_less_100", "Cluster_less_500", 
+  "Cluster_less_1000", "Cluster_greater_1000"), ordered=TRUE)
+  p_two <- jonckheere.test(temp$Percentage, g, alternative = c("two.sided"))$p.value
+  p_up <- jonckheere.test(temp$Percentage, g, alternative = c("increasing"))$p.value
+  p_down <- jonckheere.test(temp$Percentage, g, alternative = c("decreasing"))$p.value
+  trend_p <- rbind(trend_p, c(cell_type, p_two, p_up, p_down))
+}
+
+colnames(trend_p) <- c("Cell_type", "p_two", "p_up", "p_down")
+trend_p <- as.data.frame(trend_p)
+trend_p$p_two <- as.numeric(as.character(trend_p$p_two))
+trend_p$p_up <- as.numeric(as.character(trend_p$p_up))
+trend_p$p_down <- as.numeric(as.character(trend_p$p_down))
+
+trend_p$p_two_adj <- p.adjust(trend_p$p_two, method="BH")
+trend_p$p_up_adj <- p.adjust(trend_p$p_up, method="BH")
+trend_p$p_down_adj <- p.adjust(trend_p$p_down, method="BH")
+
+#PAPER
+ggplot(subset(total_composition_mean, Cell.Type %in% c("CD4+ T cells CD45RO+","CD8+ T cells")), 
+       aes(x=Class, y=Percentage))+
+  geom_boxplot(aes(fill=Class))+
+  facet_grid(.~Cell.Type)+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+
+#PAPER
+ggplot(subset(total_composition_mean, Cell.Type %in% c("Tregs")), 
+       aes(x=Class, y=Percentage))+
+  geom_boxplot(aes(fill=Class))+
+  facet_grid(.~Cell.Type)+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+
+##PAPER
+ggplot(total_composition_mean[total_composition_mean$Cell.Type == "B cells",], 
+       aes(x=Class, y=Percentage))+
+  geom_boxplot(aes(fill=Class))+
+  facet_grid(.~Group, scales = "free")+
+  theme_bw()+
+  #ggtitle("B cells")+
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+
+
+# patient <- "Patient_17_reg033_B"
+# df <- data.frame(colData(basic_metrics_list[[patient]][["clusters"]]))
+# df1 <- df[df$Phenotype == "B cells",]
+# table(df1$Neighborhood)
+# df2 <- df[df$Neighborhood == "Cluster_5",]
+# df2 <- df2[complete.cases(df2),]
+# dim(df2)[1]  # 1554/2070
+```
+
+```{r}
+sessionInfo()
+```
