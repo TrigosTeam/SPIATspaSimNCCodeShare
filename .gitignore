@@ -1,0 +1,15 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+Objects
+spe_plots
+gradient_plots
+grid_plots
+clustering_plots
+*.svg
+.DS_Store
+renv
+.Rprofile
+data
+*.html
