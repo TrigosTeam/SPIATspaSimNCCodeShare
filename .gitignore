@@ -8,6 +8,7 @@ gradient_plots
 grid_plots
 clustering_plots
 *.svg
+*.png
 .DS_Store
 renv
 .Rprofile
