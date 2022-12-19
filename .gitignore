@@ -3,6 +3,8 @@
 .RData
 .Ruserdata
 Objects
+Results
+data
 spe_plots
 gradient_plots
 grid_plots
@@ -12,5 +14,4 @@ clustering_plots
 .DS_Store
 renv
 .Rprofile
-data
 *.html
