@@ -1,0 +1,150 @@
+---
+title: "Figure 7 Diabetes Analysis"
+author: "Yuzhou Feng"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+load("../Figure6/data/data.Rdata")
+
+metadata <- read.delim("../Figure6/data/Version_1/Metadata.csv",sep=",")
+panel <- read.delim("../Figure6/data/Version_1/Panel.csv",sep=",")
+celltypes <- read.delim("../Figure6/data/Version_2/CellTypes.csv",sep=",")
+donors <- read.delim("../Figure6/data/Version_2/Donors.csv",sep=",")
+```
+
+
+```{r}
+
+celltypes$cell <- substr(celltypes$id, 5, nchar(celltypes$id))
+celltypes$region <- substr(celltypes$id, 1, 1)
+celltypes$patient <- donors$case[match(celltypes$region, donors$slide)]
+
+
+image_map <- unique(celltypes[,c("core", "region", "patient")])
+image_map$image <- 1:nrow(image_map)
+image_map$Image_ID <- paste(image_map$patient,
+                            image_map$region,
+                            image_map$image, sep="_")
+
+celltypes$Image_ID <- image_map$Image_ID[match(celltypes$core, image_map$core)]
+celltypes$CellType2 <- celltypes$CellType
+celltypes$CellType2[celltypes$CellType2 %in% c("alpha", "delta", "beta",  "gamma")] <- "islet"
+data$Image_ID <- image_map$Image_ID[match(data$ImageNumber, image_map$image)]
+
+
+
+#i <- "6362_A_1"
+for(i in unique(data$Image_ID)){
+  
+  neighorhoods_other <- list()
+  neighorhoods_immune <- list()
+  
+  temp_image <- data[data$Image_ID == i,]
+  temp_celltypes <- celltypes[celltypes$Image_ID == i,]
+  
+  temp_image$CellType <- temp_celltypes$CellType[match(temp_image$ObjectNumber, temp_celltypes$cell)]
+  temp_image$CellType2 <- temp_celltypes$CellType2[match(temp_image$ObjectNumber, temp_celltypes$cell)]
+  temp_image$CellCat <- temp_celltypes$CellCat[match(temp_image$ObjectNumber, temp_celltypes$cell)]
+  
+  
+  map <- data.frame(CellType = temp_image$CellType,
+                    CellType2 = temp_image$CellType2,
+                    CellCat = temp_image$CellCat)
+  map <- unique(map)
+  
+  formatted_image <- format_image_to_spe(format = "general", 
+                                         phenotypes = temp_image$CellType, 
+                                         coord_x = temp_image$Location_Center_X,
+                                         coord_y = temp_image$Location_Center_Y)
+  rownames(colData(formatted_image)) <- paste("Cell", 1:nrow(colData(formatted_image)), sep="_")
+  
+  
+  formatted_image <- define_celltypes(
+    formatted_image, 
+    categories = map$CellType, 
+    category_colname = "Phenotype", 
+    names = map$CellCat,
+    new_colname = "Cell.Cat")
+  
+  formatted_image <- define_celltypes(
+    formatted_image, 
+    categories = map$CellType, 
+    category_colname = "Phenotype", 
+    names = map$CellType,
+    new_colname = "Cell.Type")
+  
+  formatted_image <- define_celltypes(
+    formatted_image, 
+    categories = map$CellType, 
+    category_colname = "Phenotype", 
+    names = map$CellType2,
+    new_colname = "Cell.Type2")
+  
+  radius <- average_minimum_distance(formatted_image)*3
+  
+  clusters_other <- identify_neighborhoods(
+    formatted_image, method = "hierarchical", min_neighborhood_size = 1,
+    cell_types_of_interest = c("other"), radius = radius, 
+    feature_colname = "Cell.Cat")
+  
+  clusters_immune <- identify_neighborhoods(
+    formatted_image, method = "hierarchical", min_neighborhood_size = 1,
+    cell_types_of_interest = c("immune"), radius = radius, 
+    feature_colname = "Cell.Cat")
+  
+  neighorhoods_other[[i]] <- 
+    composition_of_neighborhoods(clusters_other, feature_colname = "Cell.Type")
+  
+  neighorhoods_immune[[i]] <- 
+    composition_of_neighborhoods(clusters_immune, feature_colname = "Cell.Type")
+
+  save(neighorhoods_other, file=paste("Objects/neighorhoods_other_", i, ".Rdata", sep=""))
+  save(neighorhoods_immune, file=paste("Objects/neighorhoods_immune_", i, ".Rdata", sep=""))
+  print(i)
+}
+
+
+
+neighorhoods_other_all <- vector()
+neighorhoods_immune_all <- vector()
+
+for(image_ID in unique(data$Image_ID)){
+  patient <- strsplit(image_ID, "_")[[1]][1]
+  slide <- strsplit(image_ID, "_")[[1]][2]
+  image <- strsplit(image_ID, "_")[[1]][3]
+  load(paste("Objects/neighorhoods_other_", image_ID, ".Rdata", sep=""))
+  if(sum(is.na(neighorhoods_other[[1]])) == 0){
+    neighorhoods_other_all <- rbind(neighorhoods_other_all,
+                                    cbind(neighorhoods_other[[1]], Patient = patient, Slide = slide, Image = image))
+  }else{
+    neighorhoods_other_all <- rbind(neighorhoods_other_all,
+                                    c(NA, NA, NA, NA, NA, Patient = patient, Slide = slide, Image = image))
+  }
+  
+  load(paste("Objects/neighorhoods_immune_", image_ID, ".Rdata", sep=""))
+  if(length(neighorhoods_immune) != 0){
+    if(sum(is.na(neighorhoods_immune[[1]])) == 0){
+      neighorhoods_immune_all <- rbind(neighorhoods_immune_all,
+                                       cbind(neighorhoods_immune[[1]], Patient = patient, Slide = slide, Image = image))
+    }else{
+      neighorhoods_immune_all <- rbind(neighorhoods_immune_all,
+                                       c(NA, NA, NA, NA, NA, Patient = patient, Slide = slide, Image = image))
+    }
+  }else{
+    neighorhoods_immune_all <- rbind(neighorhoods_immune_all,
+                                     c(NA, NA, NA, NA, NA, Patient = patient, Slide = slide, Image = image))
+  }
+  print(image)
+}
+
+
+save(neighorhoods_other_all, file="Objects/neighorhoods_other_all.Rdata")
+save(neighorhoods_immune_all, file="Objects/neighorhoods_immune_all.Rdata")
+
+```
