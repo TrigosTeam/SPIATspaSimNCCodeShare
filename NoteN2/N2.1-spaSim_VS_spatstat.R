@@ -34,6 +34,7 @@ Y <- TIS(n_cells = 4000, bg_method = "Hardcore",
          width = 2000, height = 2000, min_d = 10, 
          oversampling_rate = 1.5, names_of_bg_cells = c("Tumour", "Immune", "Others"), 
          proportions_of_bg_cells = c(0.2, 0.3, 0.5), plot_image = T, 
+         plot_categories = c("Tumour", "Immune", "Others"),
          plot_colours = c("red", "darkgreen", "lightgray"))
 dev.off()
 
