@@ -1,0 +1,207 @@
+---
+title: "Figure S10 Clustering simulation and analysis"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Packages
+
+```{r message = FALSE}
+library(spaSim)
+library(SPIAT)
+library(dplyr)
+library(RANN)
+library(svglite)
+library(tibble)
+```
+
+# Simulations
+
+```{r}
+ring_widths <- c(0, 70,110,150,190)
+
+set.seed(610)
+image_list <- multiple_images_with_immune_rings(bg_sample = bg1,
+                                                cluster_size = 160,
+                                                ring_width = ring_widths, 
+                                                ring_shape = 2,
+                                                cluster_loc_x = -600,
+                                                cluster_loc_y = -200,
+                                                prop_ring_infiltration = 0.6)
+```
+
+```{r}
+set.seed(610)
+image_list_s6 <- multiple_images_with_immune_rings(bg_sample  = bg1,
+                                                   cluster_size = 160,
+                                                   ring_width = 190, 
+                                                   ring_shape = 2,
+                                                   cluster_loc_x = -600,
+                                                   cluster_loc_y = -200,
+                                                   prop_ring_infiltration = 0.4)
+set.seed(610)
+image_list_s7 <- multiple_images_with_immune_rings(bg_sample = bg1,
+                                                   cluster_size = 160,
+                                                   ring_width = 190, 
+                                                   ring_shape = 2,
+                                                   cluster_loc_x = -600,
+                                                   cluster_loc_y = -200,
+                                                   prop_ring_infiltration = 0.2)
+image_list[[6]] <- image_list_s6[[1]]
+image_list[[7]] <- image_list_s7[[1]]
+```
+
+```{r}
+image_list_2 <- list()
+for (i in 1:(length(image_list)-2)){
+  sce <- image_list[[i]]
+  ring_width <- ring_widths[i]
+  set.seed(610)
+  sce2 <- multiple_images_with_immune_rings(bg_sample = sce,
+                                             ring_shape = 2,
+                                             cluster_size = 140,
+                                             cluster_loc_x = 40,
+                                             cluster_loc_y = 500,
+                                             ring_width = ring_width,
+                                             prop_ring_infiltration = 0.6)
+  image_list_2[[i]] <- sce2[[1]]
+}
+```
+
+```{r}
+set.seed(610)
+image_list_2_s6 <- multiple_images_with_immune_rings(bg_sample =  image_list[[6]],
+                                                     cluster_size = 160,
+                                                     ring_width = 190, 
+                                                     ring_shape = 2,
+                                                     cluster_loc_x = 40,
+                                                     cluster_loc_y = 500,
+                                                     prop_ring_infiltration = 0.4)
+set.seed(610)
+image_list_2_s7 <- multiple_images_with_immune_rings(bg_sample =  image_list[[7]],
+                                                     cluster_size = 160,
+                                                     ring_width = 190, 
+                                                     ring_shape = 2,
+                                                     cluster_loc_x = 40,
+                                                     cluster_loc_y = 500,
+                                                     prop_ring_infiltration = 0.2)
+image_list_2[[6]] <- image_list_2_s6[[1]]
+image_list_2[[7]] <- image_list_2_s7[[1]]
+```
+
+```{r}
+image_list_3 <- list()
+for (i in 1:(length(image_list_2)-2)){
+  sce2 <- image_list_2[[i]]
+  ring_width <- ring_widths[i]
+  set.seed(610)
+  sce3 <- multiple_images_with_immune_rings(bg_sample = sce2,
+                                             ring_shape = 2,
+                                             cluster_size = 140,
+                                             cluster_loc_x = 200,
+                                             cluster_loc_y = -450,
+                                             ring_width = ring_width,
+                                             prop_ring_infiltration = 0.6)
+  image_list_3[[i]] <- sce3[[1]]
+}
+```
+
+```{r}
+set.seed(610)
+image_list_3_s6 <- multiple_images_with_immune_rings(bg_sample =image_list_2[[6]],
+                                                     cluster_size = 160,
+                                                     ring_width = 190, 
+                                                     ring_shape = 2,
+                                                     cluster_loc_x = 200,
+                                                     cluster_loc_y = -450,
+                                                     prop_ring_infiltration = 0.4)
+set.seed(610)
+image_list_3_s7 <- multiple_images_with_immune_rings(bg_sample = image_list_2[[7]],
+                                                     cluster_size = 160,
+                                                     ring_width = 190, 
+                                                     ring_shape = 2,
+                                                     cluster_loc_x = 200,
+                                                     cluster_loc_y = -400,
+                                                     prop_ring_infiltration = 0.2)
+image_list_3[[6]] <- image_list_3_s6[[1]]
+image_list_3[[7]] <- image_list_3_s7[[1]]
+```
+
+```{r}
+image_list_4 <- list()
+for (i in 1:length(image_list_3)){
+  sce3 <- image_list_3[[i]]
+  data <- data.frame(colData(sce3))
+  data[data$Cell.Type == "Immune","Cell.Type"] <- "Tumour"
+  colData(sce3)$Cell.Type <- data$Cell.Type
+  image_list_4[[i]] <- sce3
+}
+for (i in 1:length(image_list_4)){
+  sce <- image_list_4[[i]]
+  attr(sce, "name") <- paste("Sim_clusters_", i, sep= "")
+  image_list_4[[i]] <- sce
+}
+for (sce in image_list_4){
+  plot_cell_categories(sce, c("Tumour","Others"), c("red","lightgray"),"Cell.Type")
+}
+
+
+# save the svg
+for (i in 1:length(image_list_4)){
+  svglite(paste("Results/simulated_clusters/Sim_clusters_",i,".svg", sep = ""),
+          width = 6, height = 4.8)
+  sce <- image_list_4[[i]]
+  print(plot_cell_categories(sce, c("Tumour","Others"), c("red","lightgray"),"Cell.Type"))
+  dev.off()
+}
+```
+
+```{r}
+image_list_clustering <- image_list_4
+save(image_list_clustering, file = "Objects/image_list_clustering.Rda")
+```
+
+# Analysis
+
+```{r}
+feature_colname = "Cell.Type"
+cell_types_of_interest <- "Tumour"
+reference_marker <- "Tumour"
+```
+
+```{r}
+# choose the radius by quantile of ave_min_dist
+## get the minimum distances between cells
+sce <- image_list_clustering[[1]]
+formatted_data <- data.frame(colData(sce))
+formatted_data <- formatted_data %>% rownames_to_column("Cell.ID")
+all_cell_cords <- spatialCoords(sce)
+if (nrow(all_cell_cords) == 0) {
+    stop("No cells found in average minimum distance calculation")
+}
+all_closest <- nn2(data = all_cell_cords, k = 2)
+all_closest_dist <- all_closest$nn.dists[, 2]
+## get the maximum as the radius
+r <- ceiling(max(all_closest_dist))
+r2 <- 2*r
+```
+
+```{r}
+## hierarchical r=79.5
+for (i in 1:length(image_list_clustering)){
+  sce <- image_list_clustering[[i]]
+  plot_cell_categories(sce, categories_of_interest = c("Tumour","Others"), colour_vector = c("red","lightgray"),feature_colname = "Cell.Type")
+  svglite(paste("Results/hierarchical_plots_r80/hierarchical_",i,".svg", sep = ""))
+  identify_neighborhoods(spe_object = sce, cell_types_of_interest = "Tumour",
+                         method="hierarchical", radius = 1.5*r,
+                         min_neighborhood_size=10,
+                         feature_colname = "Cell.Type")
+  dev.off()
+}
+```
+
+
+```{r}
+sessionInfo()
+```
