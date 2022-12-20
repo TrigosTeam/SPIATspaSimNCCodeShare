@@ -1,0 +1,123 @@
+---
+title: "Figure S6 simulation script for tumour strucutre + anaysis"
+output:
+  html_document:
+    df_print: paged
+---
+# packages
+```{r message=FALSE}
+library(spaSim)
+library(SPIAT)
+```
+
+# simulate no clear tumour clusters
+```{r}
+set.seed(195)
+image_struc1 <- multiple_background_images(bg_sample = bg1,
+                                           props = list(0.2,0.3,0.4))
+image_struc1 <- image_struc1[[1]]
+attr(image_struc1,"name") <- "NoClearTumourC"
+
+# svglite("Results/NoClearTumorC.svg", width = 6, height = 4.8)
+plot_cell_categories(image_struc1, c("Tumour","Immune","Others"),c("red","darkgreen","lightgray"),"Cell.Type")
+# dev.off()
+```
+
+```{r}
+# svglite("Results/NoClearBorder.svg", width = 6, height = 6)
+R_BC(image_struc1,"Tumour","Cell.Type")
+#0.4375546
+#dev.off()
+```
+# simulate infiltrated tumour cluster and a separate immune cluster
+```{r}
+# simulate a bg with a bit immune cells
+set.seed(0)
+image_struc2 <- multiple_background_images(bg_sample = bg1,
+                                           props = list(0,0.05,0.95))
+image_struc2 <- image_struc2[[1]]
+# simulate a infiltrated tumour cluster
+set.seed(0)
+image_struc2 <- multiple_images_with_clusters(bg_sample = image_struc2, 
+                                               cluster_shape = 2, 
+                                               prop_infiltration = 0.3, 
+                                               cluster_size = 200, 
+                                               cluster_loc_x = -350, 
+                                               cluster_loc_y = -350)
+image_struc2 <- image_struc2[[1]]
+
+# simulate a separate immune cluster
+set.seed(0)
+image_struc2 <- multiple_images_with_clusters(bg_sample = image_struc2,
+                                              cluster_shape = 3, 
+                                              prop_infiltration = 0, 
+                                              cluster_size = 400, 
+                                              cluster_loc_x = 200,
+                                              cluster_loc_y = 100)
+
+image_struc2 <- image_struc2[[1]]
+# name
+attr(image_struc2,"name")<-"MixingTumourImmuneC"
+# svglite("Results/MixingTumourImmuneC.svg", width = 6, height = 4.8)
+plot_cell_categories(image_struc2, c("Tumour","Immune","Others"),c("red","darkgreen","lightgray"),"Cell.Type")
+# dev.off()
+
+
+# define tumour structure
+R_BC(image_struc2,"Tumour","Cell.Type") # 0.3344482
+
+border2 <- identify_bordering_cells(image_struc2, "Tumour", "Cell.Type")
+dist2<-calculate_distance_to_margin(border2)
+str2 <- define_structure(dist2, "Immune", "Cell.Type",5)
+# svglite("Results/struc_MixingTumourImmuneC.svg", width = 7, height = 4.8)
+plot_cell_categories(str2, feature_colname = "Structure")
+# dev.off()
+
+# calculate proportions
+df_2 <- calculate_proportions_of_cells_in_structure(str2, "Immune","Cell.Type")
+```
+# simulate immune ring
+
+```{r}
+# simulate late bg cells with tumour cells
+set.seed(1995)
+image_struc3 <- multiple_background_images(bg_sample = bg1,
+                                    props = list(0.1,0,0.9))
+image_struc3 <- image_struc3[[1]]
+
+set.seed(995)
+image_struc3 <- multiple_images_with_immune_rings(bg_sample  = image_struc3,
+                                                  cluster_size = 200,
+                                                  ring_shape = 2,
+                                                  prop_infiltration = 0,
+                                                  ring_width = 80,
+                                                  cluster_loc_x = 0,
+                                                  cluster_loc_y = 0,
+                                                  prop_ring_infiltration = 0.1)
+image_struc3 <- image_struc3[[1]]
+attr(image_struc3,"name") <- "ImmuneR"
+
+# svglite("Results/ImmuneR.svg", width = 6, height = 4.8)
+plot_cell_categories(image_struc3, c("Tumour","Immune","Others"),c("red","darkgreen","lightgray"),"Cell.Type")
+# dev.off()
+
+R_BC(image_struc3,"Tumour","Cell.Type") #0.09742441
+
+
+border3 <- identify_bordering_cells(image_struc3, "Tumour", "Cell.Type", ahull_alpha = 50,n_to_exclude = 50)
+dist3<-calculate_distance_to_margin(border3)
+str3 <- define_structure(dist3, "Immune", "Cell.Type",6)
+# svglite("Results/struc_ImmuneR.svg", width = 7, height = 4.8)
+plot_cell_categories(str3, feature_colname = "Structure")
+# dev.off()
+
+# calculate proportions
+df_3 <- calculate_proportions_of_cells_in_structure(str3, "Immune","Cell.Type")
+
+df_3
+```
+
+```{r}
+save(image_struc1, image_struc2, image_struc3, file = "Objects/simulated_strucs.Rda")
+```
+
