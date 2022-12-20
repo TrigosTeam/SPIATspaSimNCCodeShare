@@ -1,0 +1,314 @@
+---
+title: "Figure 6 Diabetes analysis"
+author: "Yuzhou Feng"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Packages and data
+```{r, message=FALSE}
+library(SPIAT)
+library(clinfun)
+library(ggplot2)
+
+donors <- read.delim("data/Version_2/Donors.csv",sep=",")
+
+load("Objects/cell_proportions_in_structure_all.Rdata")
+load("Objects/cell_proportions_in_islet_all.Rdata")
+load("Objects/distances_to_border_all.Rdata")
+load("Objects/proportion_cells_all.Rdata")
+```
+
+
+## Non-islet cells in structures
+```{r}
+cell_proportions_in_structure_all$Stage <- 
+    donors$stage[match(cell_proportions_in_structure_all$Slide, donors$slide)]
+
+cell_proportions_all_cells_structure <- 
+    cell_proportions_in_structure_all[cell_proportions_in_structure_all$Relative_to == "All_cells_in_the_structure",]
+cell_proportions_across_images <- 
+    cell_proportions_in_structure_all[cell_proportions_in_structure_all$Relative_to == "The_same_cell_type_in_the_whole_image",]
+  
+cell_proportions_all_cells_structure_agg_p_infiltrated <- aggregate(P.Infiltrated.CoI ~ Patient+Stage+Cell.Type, cell_proportions_all_cells_structure, mean)
+cell_proportions_all_cells_structure_agg_p_internal <- aggregate(P.Internal.Margin.CoI ~ Patient+Stage+Cell.Type, cell_proportions_all_cells_structure, mean)
+cell_proportions_all_cells_structure_agg_p_external <- aggregate(P.External.Margin.CoI ~ Patient+Stage+Cell.Type, cell_proportions_all_cells_structure, mean)
+cell_proportions_all_cells_structure_agg_p_stromal <- aggregate(P.Stromal.CoI ~ Patient+Stage+Cell.Type, cell_proportions_all_cells_structure, mean)
+
+cell_proportions_all_cells_structure_agg_p_infiltrated$Location <- "Infiltrated"
+cell_proportions_all_cells_structure_agg_p_internal$Location <- "Internal"
+cell_proportions_all_cells_structure_agg_p_external$Location <- "External"
+cell_proportions_all_cells_structure_agg_p_stromal$Location <- "Stromal"
+
+colnames(cell_proportions_all_cells_structure_agg_p_infiltrated)[4] <- "Proportion"
+colnames(cell_proportions_all_cells_structure_agg_p_internal)[4] <- "Proportion"
+colnames(cell_proportions_all_cells_structure_agg_p_external)[4] <- "Proportion"
+colnames(cell_proportions_all_cells_structure_agg_p_stromal)[4] <- "Proportion"
+
+cell_proportions_all_cells_structure_agg <- 
+    rbind(cell_proportions_all_cells_structure_agg_p_infiltrated,
+          cell_proportions_all_cells_structure_agg_p_internal,
+          cell_proportions_all_cells_structure_agg_p_external,
+          cell_proportions_all_cells_structure_agg_p_stromal)
+
+cell_proportions_all_cells_structure_agg$Stage <- 
+    factor(cell_proportions_all_cells_structure_agg$Stage,
+           levels=c("Non-diabetic", "Onset", "Long-duration"))
+cell_proportions_all_cells_structure_agg$Location <- 
+    factor(cell_proportions_all_cells_structure_agg$Location,
+           levels=c("Infiltrated","Internal","External","Stromal"))
+
+cell_proportions_all_cells_structure_agg <- 
+    cell_proportions_all_cells_structure_agg[cell_proportions_all_cells_structure_agg$Cell.Type != "All_cells_of_interest",]
+
+
+cell_proportions_across_images_agg_p_infiltrated <- aggregate(P.Infiltrated.CoI ~ Patient+Stage+Cell.Type, cell_proportions_across_images, mean)
+cell_proportions_across_images_agg_p_internal <- aggregate(P.Internal.Margin.CoI ~ Patient+Stage+Cell.Type, cell_proportions_across_images, mean)
+cell_proportions_across_images_agg_p_external <- aggregate(P.External.Margin.CoI ~ Patient+Stage+Cell.Type, cell_proportions_across_images, mean)
+cell_proportions_across_images_agg_p_stromal <- aggregate(P.Stromal.CoI ~ Patient+Stage+Cell.Type, cell_proportions_across_images, mean)
+
+cell_proportions_across_images_agg_p_infiltrated$Location <- "Infiltrated"
+cell_proportions_across_images_agg_p_internal$Location <- "Internal"
+cell_proportions_across_images_agg_p_external$Location <- "External"
+cell_proportions_across_images_agg_p_stromal$Location <- "Stromal"
+
+colnames(cell_proportions_across_images_agg_p_infiltrated)[4] <- "Proportion"
+colnames(cell_proportions_across_images_agg_p_internal)[4] <- "Proportion"
+colnames(cell_proportions_across_images_agg_p_external)[4] <- "Proportion"
+colnames(cell_proportions_across_images_agg_p_stromal)[4] <- "Proportion"
+
+cell_proportions_across_images_agg <- rbind(cell_proportions_across_images_agg_p_infiltrated,
+                                            cell_proportions_across_images_agg_p_internal,
+                                            cell_proportions_across_images_agg_p_external,
+                                            cell_proportions_across_images_agg_p_stromal)
+
+cell_proportions_across_images_agg$Stage <- factor(cell_proportions_across_images_agg$Stage,
+                                                   levels=c("Non-diabetic", "Onset", "Long-duration"))
+cell_proportions_across_images_agg$Location <- factor(cell_proportions_across_images_agg$Location,
+                                                      levels=c("Infiltrated","Internal","External","Stromal"))
+
+cell_proportions_across_images_agg <- cell_proportions_across_images_agg[cell_proportions_across_images_agg$Cell.Type != "All_cells_of_interest",]
+```
+
+## Calculate p-values for endothelial cells
+```{r}
+trend_p <- vector()
+temp <- cell_proportions_across_images_agg[cell_proportions_across_images_agg$Cell.Type == "endothelial",]
+for(location in unique(temp$Location)){
+  temp2 <- temp[temp$Location == location,]
+  g <- factor(temp2$Stage, levels=c("Non-diabetic", "Onset", "Long-duration"), ordered=TRUE)
+  p1 <- jonckheere.test(temp2$Proportion, g, alternative = c("increasing"))$p.value
+  p2 <- jonckheere.test(temp2$Proportion, g, alternative = c("decreasing"))$p.value
+  trend_p <- rbind(trend_p, c(location, p1, p2))
+}
+trend_p <- data.frame(trend_p)
+colnames(trend_p) <- c("Location", "p_increasing", "p_decreasing")
+
+trend_p$p_increasing <- as.numeric(trend_p$p_increasing)
+trend_p$p_decreasing <- as.numeric(trend_p$p_decreasing)
+
+cell_proportions_across_images_agg$Location <- factor(cell_proportions_across_images_agg$Location,
+                                                      levels=c("Stromal", "External", "Internal", "Infiltrated"))
+ggplot(subset(cell_proportions_across_images_agg, Cell.Type %in% c("endothelial")), 
+       aes(x=Stage, y=Proportion))+
+  geom_boxplot(aes(fill=Stage))+
+  facet_grid(Location ~ ., scale="free_y")+
+  ggtitle("Endothelial")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+```
+
+## Composition of islets
+```{r}
+cell_proportions_in_islet_all <- as.data.frame(cell_proportions_in_islet_all)
+cell_proportions_in_islet_all$Stage <- donors$stage[match(cell_proportions_in_islet_all$Slide, donors$slide)]
+
+###Looking at the proportion of islet cells in the islets
+##Percentage inside vs. the border
+####Looking at non-islet cells in the islets
+cell_proportions_in_islet_all_only_islet$Border <- as.numeric(as.character(cell_proportions_in_islet_all_only_islet$Border))
+cell_proportions_in_islet_all_only_islet$Inside <- as.numeric(as.character(cell_proportions_in_islet_all_only_islet$Inside))
+cell_proportions_in_islet_all_only_islet$Outside <- as.numeric(as.character(cell_proportions_in_islet_all_only_islet$Outside))
+
+cell_proportions_in_islet_all_only_islet$Inside_plus_border <- cell_proportions_in_islet_all_only_islet$Inside + cell_proportions_in_islet_all_only_islet$Border
+
+cell_proportions_in_islet_all_only_islet$Total_cell_type <- apply(cell_proportions_in_islet_all_only_islet[,c(2:4)], 1, sum) # should be 2:4
+
+total_inside <- aggregate(Inside_plus_border ~ Image, cell_proportions_in_islet_all_only_islet, sum)
+
+cell_proportions_in_islet_all_only_islet$Total_inside <- total_inside$Inside[match(cell_proportions_in_islet_all_only_islet$Image,
+                                                                                   total_inside$Image)]
+
+total_image <- aggregate(Total_cell_type ~ Image, cell_proportions_in_islet_all_only_islet, sum)
+
+cell_proportions_in_islet_all_only_islet$Total_image <- total_image$Total_cell_type[match(cell_proportions_in_islet_all_only_islet$Image,
+                                                                                          total_image$Image)]
+
+cell_proportions_in_islet_all_only_islet$Percentage_by_cell_type_inside <- (cell_proportions_in_islet_all_only_islet$Inside/cell_proportions_in_islet_all_only_islet$Total_cell_type)*100
+
+cell_proportions_in_islet_all_only_islet$Percentage_by_area_inside <- (cell_proportions_in_islet_all_only_islet$Inside/cell_proportions_in_islet_all_only_islet$Total_inside)*100
+
+cell_proportions_in_islet_all_only_islet$Percentage_by_image_inside <- (cell_proportions_in_islet_all_only_islet$Inside/cell_proportions_in_islet_all_only_islet$Total_image)*100
+
+## By percentage calculate by area ####
+cell_proportions_in_islet_all_only_islet_area <- cell_proportions_in_islet_all_only_islet[,c("Patient", "Slide", "Image", "Stage", "Cell.Type",
+                                                                                             #"Percentage_by_area_border",
+                                                                                             #"Percentage_by_area_outside",
+                                                                                             "Percentage_by_area_inside")]
+temp_inside <- aggregate(Percentage_by_area_inside ~ Patient+Stage+Cell.Type, cell_proportions_in_islet_all_only_islet_area, mean)
+cell_proportions_in_islet_all_only_islet_area2 <- data.frame(temp_inside)
+
+library(reshape2)
+cell_proportions_in_islet_all_only_islet_area <- melt(cell_proportions_in_islet_all_only_islet_area2)
+cell_proportions_in_islet_all_only_islet_area$variable <- as.character(cell_proportions_in_islet_all_only_islet_area$variable)
+cell_proportions_in_islet_all_only_islet_area$variable[cell_proportions_in_islet_all_only_islet_area$variable == "Percentage_by_area_inside"] <- "Inside"
+colnames(cell_proportions_in_islet_all_only_islet_area)[4:5] <- c("Area", "Percentage_by_area")
+cell_proportions_in_islet_all_only_islet_area$Stage <- factor(cell_proportions_in_islet_all_only_islet_area$Stage,
+                                                              levels=c("Non-diabetic","Onset","Long-duration"))
+
+##PAPER 
+ggplot(subset(cell_proportions_in_islet_all_only_islet_area, Area == "Inside"), aes(x=Stage, y=Percentage_by_area))+
+  geom_boxplot(aes(fill=Stage))+
+  facet_grid(.~Cell.Type, scales='free_x')+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+
+
+
+temp <- subset(cell_proportions_in_islet_all_only_islet_area, Area == "Inside")
+temp_alpha <- subset(temp, Cell.Type == "alpha")
+temp_beta <- subset(temp, Cell.Type == "beta")
+temp_delta <- subset(temp, Cell.Type == "delta")
+temp_gamma <- subset(temp, Cell.Type == "gamma")
+
+g <- factor(temp_alpha$Stage, levels=c("Non-diabetic", "Onset", "Long-duration"), ordered=TRUE)
+jonckheere.test(temp_alpha$Percentage_by_area, g, alternative = c("increasing"))
+
+g <- factor(temp_beta$Stage, levels=c("Non-diabetic", "Onset", "Long-duration"), ordered=TRUE)
+jonckheere.test(temp_beta$Percentage_by_area, g, alternative = c("decreasing"))
+
+g <- factor(temp_delta$Stage, levels=c("Non-diabetic", "Onset", "Long-duration"), ordered=TRUE)
+jonckheere.test(temp_delta$Percentage_by_area, g, alternative = c("increasing"))
+
+g <- factor(temp_gamma$Stage, levels=c("Non-diabetic", "Onset", "Long-duration"), ordered=TRUE)
+jonckheere.test(temp_gamma$Percentage_by_area, g, alternative = c("increasing"))
+```
+
+## Islet size ####
+##Total cells in an image
+```{r}
+temp <- cell_proportions_in_islet_all
+temp$Border <- as.numeric(as.character(temp$Border))
+temp$Inside <- as.numeric(as.character(temp$Inside))
+temp$Outside <- as.numeric(as.character(temp$Outside))
+temp$Total_per_cell_type <- apply(temp[,c(2:4)], 1, sum)
+total_per_image <- aggregate(Total_per_cell_type ~ Patient+Slide+Image+Stage, temp, sum)
+
+temp_islet_cells <- temp[temp$Cell.Type %in% c("alpha", "beta", "delta", "gamma"),]
+temp_islet_cells$Total_in_islets_islet_cells <- apply(temp_islet_cells[,c(2:3)], 1, sum)
+
+total_islets_islet_cells <- aggregate(Total_in_islets_islet_cells ~ Patient+Slide+Image+Stage, temp_islet_cells, sum)
+
+totals <- total_per_image
+colnames(totals)[5] <- "Total_in_image"
+
+totals$Total_in_islets_islet_cells <- total_islets_islet_cells$Total_in_islets_islet_cells[match(totals$Image, total_islets_islet_cells$Image)]
+
+
+totals$Percentage_in_islets_islet_cells <- (totals$Total_in_islets_islet_cells/totals$Total_in_image)*100
+totals$Stage <- factor(totals$Stage, levels=c("Non-diabetic", "Onset", "Long-duration"))
+
+totals_islet_cells <- aggregate(Percentage_in_islets_islet_cells ~ Patient + Stage, totals, mean)
+
+totals_islet_cells <- aggregate(Total_in_islets_islet_cells ~ Patient + Stage, totals, mean)
+
+ggplot(totals_islet_cells, aes(x=Stage, y=Total_in_islets_islet_cells))+
+  geom_boxplot(aes(fill=Stage))+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+
+library(clinfun)
+
+g <- factor(totals_islet_cells$Stage, levels=c("Non-diabetic", "Onset", "Long-duration"), ordered=TRUE)
+jonckheere.test(totals_islet_cells$Total_in_islets_islet_cells, g, alternative = c("decreasing"))
+```
+
+
+## Distance to border ####
+```{r}
+
+##Only consider cases where there are at least 10? cells of the type in the image?
+
+##Find in which images we have at least 10 cells of a type
+proportion_cells_all_filtered <- proportion_cells_all[proportion_cells_all$Number_of_celltype >= 10,]
+
+distances_to_border_all$Stage <- donors$stage[match(distances_to_border_all$Slide, donors$slide)]
+
+distances_to_border_all_filtered <- distances_to_border_all[distances_to_border_all$Image %in% proportion_cells_all_filtered$Image,]
+##The NAs is when there aren't enough cells of that type in a region. Hence the cutoff of 10 is a bit arbitrary
+
+distances_to_border_all_filtered <- distances_to_border_all_filtered[!is.na(distances_to_border_all_filtered$St.dev_d),]
+
+distances_to_border_agg <- 
+    aggregate(Mean_d ~ Cell.Type+Area+Patient+Stage, distances_to_border_all_filtered, mean)
+
+distances_to_border_agg$Stage <- 
+    factor(distances_to_border_agg$Stage, levels=c("Non-diabetic", "Onset", "Long-duration"))
+
+distances_to_border_agg <- 
+    distances_to_border_agg[distances_to_border_agg$Cell.Type != "All_cell_types_of_interest",]
+
+
+distances_to_border_agg_endothelial <- subset(distances_to_border_agg, Cell.Type=="endothelial")
+distances_to_border_agg_stroma <- subset(distances_to_border_agg_endothelial, Area == "Stroma")
+distances_to_border_agg_islet <- subset(distances_to_border_agg_endothelial, Area == "Tumor_area")
+
+g <- factor(distances_to_border_agg_islet$Stage, levels=c("Non-diabetic", "Onset", "Long-duration"), ordered=TRUE)
+jonckheere.test(distances_to_border_agg_islet$Mean_d, g, alternative = c("decreasing"))
+
+g <- factor(distances_to_border_agg_stroma$Stage, levels=c("Non-diabetic", "Onset", "Long-duration"), ordered=TRUE)
+jonckheere.test(distances_to_border_agg_stroma$Mean_d, g, alternative = c("increasing"))
+
+#PAPER
+ggplot(distances_to_border_agg_endothelial, aes(x=Stage, y=Mean_d))+
+  geom_boxplot(aes(fill=Stage))+
+  ylab("Distance to margin")+
+  facet_grid(Area~., scale="free_y")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+
+
+
+
+## plot one example image ####
+# This image is loaded from the objects that were generated in Supp Note N3
+load("../Objects/real.Rda")
+
+image <- Real[[232]]
+categories <- c("alpha","beta","delta","gamma", "ductal","acinar",
+                "Th", "otherimmune", "Tc","macrophage", "naiveTc","neutrophil","B", 
+                "endothelial","stromal", "unknown")
+names <- c(rep("Islet", 4), rep("Exorine",2), rep("Immune", 7), "Endothelial", rep("Others", 2))
+image <- define_celltypes(image, categories = categories, category_colname = "Cell.Type",
+                          names = names, new_colname = "Cell.Type4")
+image$Cell.Type4 <- factor(image$Cell.Type4, levels = c("Islet", "Exorine", "Immune", "Endothelial", "Others"))
+new_categories <- levels(colData(image)$Cell.Type4)
+colour_vector <- c("brown", "orange", "purple", "black", "gray" )
+plot_cell_categories(image, new_categories, colour_vector, "Cell.Type4")
+
+image_border <- identify_bordering_cells(image, "Islet", feature_colname = "Cell.Type4", ahull_alpha = 30)
+image_dist <- calculate_distance_to_margin(image_border)
+image_structure <- define_structure(image_dist, cell_types_of_interest = "Endothelial", feature_colname = "Cell.Type4")
+plot_cell_categories(image_structure, feature_colname = "Structure")
+
+max(spatialCoords(image)[,1]) #685
+max(spatialCoords(image)[,2]) #540.625
+```
+
+```{r}
+sessionInfo()
+```

@@ -1,0 +1,253 @@
+---
+title: "Fig6 Diabetes load data and extract metrics"
+author: "Yuzhou Feng"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE}
+library(SPIAT)
+```
+
+# Download dataset
+This script is for reading in diabetes data and extract metrics from each image.
+Publically available data downloaded from https://data.mendeley.com/datasets/cydmwsfztj/2
+
+Data was read with `read.delim()` from public dataset and saved as `.Rdata` for further analysis.
+```{r}
+#data <- read.delim("Diabetes_mass_cyto/All_Cells.csv",sep=",")
+#save(data, file="data/data.Rdata")
+load("data/data.Rdata")
+
+# get metadata
+metadata <- read.delim("data/Version_1/Metadata.csv",sep=",")
+panel <- read.delim("data/Version_1/Panel.csv",sep=",")
+celltypes <- read.delim("data/Version_2/CellTypes.csv",sep=",")
+donors <- read.delim("data/Version_2/Donors.csv",sep=",")
+```
+
+# format image, and extract metrics
+```{r}
+celltypes$cell <- substr(celltypes$id, 5, nchar(celltypes$id))
+celltypes$region <- substr(celltypes$id, 1, 1)
+celltypes$patient <- donors$case[match(celltypes$region, donors$slide)]
+
+image_map <- unique(celltypes[,c("core", "region", "patient")])
+image_map$image <- 1:nrow(image_map)
+image_map$Image_ID <- paste(image_map$patient,
+                            image_map$region,
+                            image_map$image, sep="_")
+
+celltypes$Image_ID <- image_map$Image_ID[match(celltypes$core, image_map$core)]
+celltypes$CellType2 <- celltypes$CellType
+celltypes$CellType2[celltypes$CellType2 %in% c("alpha", "delta", "beta",  "gamma")] <- "islet"
+data$Image_ID <- image_map$Image_ID[match(data$ImageNumber, image_map$image)]
+```
+
+## Extract metrics
+```{r}
+for(i in unique(data$Image_ID)){
+  n_cells <- list()
+  image_size <- list()
+  proportion_cells <- list()
+  min_distance <- list()
+  overall_min_distance <- list()
+  cin <- list()
+  mixing <- list()
+  entropy <- list()
+  cell_proportions_in_structure <- list()
+  cell_proportions_in_structure_islet_cells <- list()
+  cell_proportions_in_islet <- list()
+  distances_to_border <- list()
+  
+  temp_image <- data[data$Image_ID == i,]
+  temp_celltypes <- celltypes[celltypes$Image_ID == i,]
+  
+  temp_image$CellType <- temp_celltypes$CellType[match(temp_image$ObjectNumber, temp_celltypes$cell)]
+  temp_image$CellType2 <- temp_celltypes$CellType2[match(temp_image$ObjectNumber, temp_celltypes$cell)]
+  temp_image$CellCat <- temp_celltypes$CellCat[match(temp_image$ObjectNumber, temp_celltypes$cell)]
+  
+  map <- data.frame(CellType = temp_image$CellType,
+                    CellType2 = temp_image$CellType2,
+                    CellCat = temp_image$CellCat)
+  map <- unique(map)
+  
+  formatted_image <- format_image_to_spe(format = "general", 
+                                         phenotypes = temp_image$CellType, 
+                                         coord_x = temp_image$Location_Center_X,
+                                         coord_y = temp_image$Location_Center_Y)
+  rownames(colData(formatted_image)) <- paste("Cell", 1:nrow(colData(formatted_image)), sep="_")
+  
+  
+  formatted_image <- define_celltypes(
+    formatted_image, 
+    categories = map$CellType, 
+    category_colname = "Phenotype", 
+    names = map$CellCat,
+    new_colname = "Cell.Cat")
+  
+  formatted_image <- define_celltypes(
+    formatted_image, 
+    categories = map$CellType, 
+    category_colname = "Phenotype", 
+    names = map$CellType,
+    new_colname = "Cell.Type")
+  
+  formatted_image <- define_celltypes(
+    formatted_image, 
+    categories = map$CellType, 
+    category_colname = "Phenotype", 
+    names = map$CellType2,
+    new_colname = "Cell.Type2")
+  
+  #Total number of cells
+  n_cells[[i]] <- ncol(formatted_image)
+  
+  #Image size
+  image_size[[i]] <- c(X_coord = max(spatialCoords(formatted_image)[,1]), Y_coord = max(spatialCoords(formatted_image)[,2]))
+  
+  ##Proportion of cells in the entire image. You can get islet size from here (see my code for the paper below)
+  proportion_cells[[i]] <- calculate_cell_proportions(formatted_image, 
+                                                      reference_celltypes=NULL, 
+                                                      feature_colname ="Cell.Type",
+                                                      plot.image = FALSE)
+  
+  #Minimum distance between cell pairs - for later
+  min_dist <- calculate_minimum_distances_between_celltypes(
+    formatted_image, 
+    cell_types_of_interest = unique(colData(formatted_image)$Cell.Type),
+    feature_colname = "Cell.Type")
+  
+  min_distance[[i]] <- calculate_summary_distances_between_celltypes(min_dist)
+  
+  #Radius for various calculations
+  radius <- average_minimum_distance(formatted_image)*3
+  
+  overall_min_distance[[i]] <- average_minimum_distance(formatted_image)
+  
+  cells <- unique(colData(formatted_image)$Cell.Type)
+  cells <- cells[!(cells %in% c("unknown", "otherimmune"))]
+  cells <- c(cells, "islet")
+
+  ##Identify margin cells
+  formatted_border <- identify_bordering_cells(formatted_image, 
+                                                reference_cell = "islet", ahull_alpha = 20,
+                                                feature_colname="Cell.Type2", 
+                                                n_of_polygons = 1, draw=FALSE)
+
+  formatted_distance <- calculate_distance_to_margin(formatted_border)
+  
+  ##Cells in structure
+  non_islet <- c("acinar","ductal","stromal","endothelial","Th","macrophage","neutrophil",
+                 "Tc","naiveTc","B")
+  islet <- c("alpha", "delta", "beta", "gamma")
+  
+  ##Non-islet cells in structures
+  formatted_structure <- define_structure(
+    formatted_distance, cell_types_of_interest = non_islet, 
+    feature_colname = "Cell.Type", n_margin_layers = 5)
+  
+  cell_proportions_in_structure[[i]] <- calculate_proportions_of_cells_in_structure(
+    formatted_structure, cell_types_of_interest = non_islet, 
+    feature_colname ="Cell.Type")
+
+  ##Composition of islets
+  formatted_structure <- define_structure(
+    formatted_distance, cell_types_of_interest = islet, 
+    feature_colname = "Cell.Type", n_margin_layers = 5)
+  
+  cell_proportions_in_islet[[i]] <- table(formatted_structure@colData[,c("Cell.Type", "Region")])
+  
+  #Distance to the margin (all cell types)
+  names_of_other_cells <- unique(colData(formatted_image)$Cell.Type)
+  
+  distances_to_border[[i]] <- calculate_summary_distances_of_cells_to_borders(
+    formatted_structure, cell_types_of_interest = names_of_other_cells, 
+    "Cell.Type")
+  print(i)
+}
+```
+
+```{r}
+# Collapsing metrics to single data frames ####
+n_cells_all <- vector()
+image_size_all <- vector()
+proportion_cells_all <- vector()
+overall_min_distance_all <- vector()
+min_distance_all <- vector()
+cell_proportions_in_structure_all <- vector()
+distances_to_border_all <- vector()
+cell_proportions_in_islet_all <- vector()
+for(image_ID in unique(data$Image_ID)){
+  
+  patient <- strsplit(image_ID, "_")[[1]][1]
+  slide <- strsplit(image_ID, "_")[[1]][2]
+  image <- strsplit(image_ID, "_")[[1]][3]
+  
+  n_cells_all <- as.data.frame(rbind(n_cells_all,
+                       c(Total_cells = n_cells[[1]], Patient = patient, Slide = slide, Image = image)))
+  n_cells_all$Total_cells <- as.numeric(as.character(n_cells_all$Total_cells))
+ 
+  image_size_all <- as.data.frame(rbind(image_size_all,
+                          c(image_size[[1]], Patient = patient, Slide = slide, Image = image)))
+  image_size_all$X_coord <- as.numeric(as.character(image_size_all$X_coord))
+  image_size_all$Y_coord <- as.numeric(as.character(image_size_all$Y_coord))
+  
+  overall_min_distance_all <- as.data.frame(rbind(overall_min_distance_all,
+                                    c(Overall_min_distance=overall_min_distance[[1]], Patient = patient, Slide = slide, Image = image)))
+  overall_min_distance_all$Overall_min_distance <- as.numeric(as.character(overall_min_distance_all$Overall_min_distance))
+  
+    proportion_cells_all <- rbind(proportion_cells_all,
+                                cbind(proportion_cells[[1]], Patient = patient, Slide = slide, Image = image))
+  
+  min_distance_all <- rbind(min_distance_all,
+                            cbind(min_distance[[1]], Patient = patient, Slide = slide, Image = image))
+  
+  cell_proportions_in_structure_all <- rbind(cell_proportions_in_structure_all,
+                                             cbind(cell_proportions_in_structure[[1]], Patient = patient, Slide = slide, Image = image))
+  
+  distances_to_border_all <- rbind(distances_to_border_all,
+                                   cbind(distances_to_border[[1]], Patient = patient, Slide = slide, Image = image))
+  
+  if(length(colnames(cell_proportions_in_islet[[1]])) == 3){
+    cell_proportions_in_islet_all <- as.data.frame(rbind(cell_proportions_in_islet_all,
+                                           cbind(Cell.Type = rownames(cell_proportions_in_islet[[1]]), cell_proportions_in_islet[[1]], Patient = patient, Slide = slide, Image = image)))
+  }else{
+    temp <- cell_proportions_in_islet[[1]]
+    NAs <- rep(NA, nrow(temp))
+    if(!("Outside" %in% colnames(temp))){
+      cell_proportions_in_islet[[1]] <- cbind(cell_proportions_in_islet[[1]], Outside=NAs)
+    }
+    if(!("Inside" %in% colnames(temp))){
+      cell_proportions_in_islet[[1]] <- cbind(cell_proportions_in_islet[[1]], Inside=NAs)
+    }
+    if(!("Border" %in% colnames(temp))){
+      cell_proportions_in_islet[[1]] <- cbind(cell_proportions_in_islet[[1]], Border=NAs)
+    }
+    cell_proportions_in_islet_all <- as.data.frame(rbind(cell_proportions_in_islet_all,
+                                           cbind(Cell.Type = rownames(cell_proportions_in_islet[[1]]), cell_proportions_in_islet[[1]], Patient = patient, Slide = slide, Image = image)))
+    
+  }
+  cell_proportions_in_islet_all$Border <- as.numeric(as.character(cell_proportions_in_islet_all$Border))
+  cell_proportions_in_islet_all$Inside <- as.numeric(as.character(cell_proportions_in_islet_all$Inside))
+  cell_proportions_in_islet_all$Outside <- as.numeric(as.character(cell_proportions_in_islet_all$Outside))
+}
+
+save(n_cells_all, file="Objects/n_cells_all.Rdata")  
+save(image_size_all, file="Objects/image_size_all.Rdata")  
+save(proportion_cells_all, file="Objects/proportion_cells_all.Rdata")
+save(overall_min_distance_all, file="Objects/overall_min_distance_all.Rdata")
+save(min_distance_all, file="Objects/min_distance_all.Rdata")
+save(cell_proportions_in_structure_all, file="Objects/cell_proportions_in_structure_all.Rdata")
+save(distances_to_border_all, file="Objects/distances_to_border_all.Rdata")
+save(cell_proportions_in_islet_all, file="Objects/cell_proportions_in_islet_all.Rdata")
+```
+
+
+```{r}
+sessionInfo()
+```
