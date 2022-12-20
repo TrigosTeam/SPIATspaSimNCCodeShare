@@ -41,10 +41,10 @@ preprocess <- function(){
   items <- list()
   load("data/data.Rdata")
   # 12 patients, 24 slides, 845 cores, 
-  metadata <- read.delim("Version_1/Metadata.csv",sep=",")
-  panel <- read.delim("Version_1/Panel.csv",sep=",")
-  celltypes <- read.delim("Version_2/CellTypes.csv",sep=",")
-  donors <- read.delim("Version_2/Donors.csv",sep=",")
+  metadata <- read.delim("data/Version_1/Metadata.csv",sep=",")
+  panel <- read.delim("data/Version_1/Panel.csv",sep=",")
+  celltypes <- read.delim("data/Version_2/CellTypes.csv",sep=",")
+  donors <- read.delim("data/Version_2/Donors.csv",sep=",")
   
   celltypes$cell <- substr(celltypes$id, 5, nchar(celltypes$id))
   celltypes$region <- substr(celltypes$id, 1, 1)
@@ -173,7 +173,6 @@ pb <- txtProgressBar(style = 3)
 for(j in seq_len(length(unique(data$Image_ID)))){
 # for (j in c(415, 522, 566, 654, 687, 688, 693, 781)){ #some bordering cell detection do not return bordering cells
   i <- unique(data$Image_ID)[j]
-  pdf(paste("Plots/Plots_", i, ".pdf", sep=""), width=8)
   temp_image <- data[data$Image_ID == i,]
   temp_celltypes <- celltypes[celltypes$Image_ID == i,]
   
@@ -181,12 +180,6 @@ for(j in seq_len(length(unique(data$Image_ID)))){
   temp_image$CellType2 <- temp_celltypes$CellType2[match(temp_image$ObjectNumber, temp_celltypes$cell)]
   temp_image$CellCat <- temp_celltypes$CellCat[match(temp_image$ObjectNumber, temp_celltypes$cell)]
   
-  g <- ggplot(temp_image, aes(x=Location_Center_X, y=Location_Center_Y))+
-    geom_point(aes(colour=CellType))
-  print(g)
-  g <- ggplot(temp_image, aes(x=Location_Center_X, y=Location_Center_Y))+
-    geom_point(aes(colour=CellCat))
-  print(g)
   
   map <- data.frame(CellType = temp_image$CellType,
                     CellType2 = temp_image$CellType2,
@@ -263,7 +256,6 @@ for(j in seq_len(length(unique(data$Image_ID)))){
       error=function(e) e, warning=function(w) w)
   }
   
-  
   n_clusters[[i]] <- attr(formatted_border, "n_of_clusters")
 
   formatted_distance <- calculate_distance_to_margin(formatted_border)
@@ -277,8 +269,7 @@ for(j in seq_len(length(unique(data$Image_ID)))){
   formatted_structure <- define_structure(
     formatted_distance, cell_types_of_interest = islet, 
     feature_colname = "Cell.Type", n_margin_layers = 0)
-  plot_cell_categories(formatted_structure, feature_colname = "Structure")
-  
+
   cell_proportions_in_islet[[i]] <- table(formatted_structure@colData[,c("Cell.Type", "Region")])
   
   # save objects
@@ -290,7 +281,6 @@ for(j in seq_len(length(unique(data$Image_ID)))){
   save(n_clusters, file=paste("Objects/n_clusters.Rdata", sep=""))
   save(cell_proportions_in_islet, file=paste("Objects/cell_proportions_in_islet.Rdata", sep=""))
   print(i)
-  dev.off()
   setTxtProgressBar(pb, j/length(unique(data$Image_ID)))
 }
 close(pb)

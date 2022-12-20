@@ -98,7 +98,7 @@ load("Objects/args_sim_sampled.Rdata")
 even_sim_paired <- list()
 
 infiltration_types <- c("nonbeta", "immune", "endothelial", "others")
-for (i in 68:845){
+for (i in 486:845){
     args <- new[i, ]
 
     bg <- even_bg_paired[[i]]$image
@@ -240,7 +240,7 @@ for (i in 68:845){
                               feature_colname = "Cell.Type")
     print(g)
     even_sim_paired[[i]] <- image_spe
-    save(even_sim_paired, file = "Objects/even_sim_paired.Rdata")
+    # save(even_sim_paired, file = "Objects/even_sim_paired.Rdata")
 }
 
 
@@ -264,4 +264,3 @@ for (i in 1:845){
     print(i)
     save(even_sim_paired_final, file = "Objects/even_sim_paired_final.Rda")
 }
-load("Objects/even_sim_paired_final.Rda")
