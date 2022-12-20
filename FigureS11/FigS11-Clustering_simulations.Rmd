@@ -1,5 +1,5 @@
 ---
-title: "Figure S10 Clustering simulation and analysis"
+title: "Figure S11 Clustering simulation and analysis"
 output:
   html_document:
     df_print: paged

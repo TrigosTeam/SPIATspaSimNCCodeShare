@@ -12,6 +12,8 @@ grid_plots
 clustering_plots
 *.svg
 *.png
+*.jpg
+*.tiff
 .DS_Store
 renv
 .Rprofile
