@@ -18,7 +18,8 @@ images <- multiple_images_with_immune_rings(bg_sample = image,
                                                   prop_ring_infiltration = 0, 
                                             plot_image = T,
                                             plot_categories = c("Tumour", "Immune", "Others"),
-                                            plot_colours = c("red", "darkgreen", "lightgray"))
+                                            plot_colours = c("#D95F02", "#7570B3", "lightgray"))
+
 df_list <- list()
 a <- 0
 for (spe in images){
@@ -59,7 +60,10 @@ images <- multiple_images_with_clusters(bg_sample = image,
                                               prop_infiltration = 0, 
                                               cluster_size = 400, 
                                               cluster_loc_x = c(-40, 50, 200, 320),
-                                              cluster_loc_y = c(-40, 100, 200, 300))
+                                              cluster_loc_y = c(-40, 100, 200, 300),
+                                        plot_image = T,
+                                        plot_categories = c("Tumour", "Immune", "Others"),
+                                        plot_colours = c("#D95F02", "#7570B3", "lightgray"))
 
 df_list <- list()
 a <- 0

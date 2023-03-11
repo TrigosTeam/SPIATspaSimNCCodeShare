@@ -14,6 +14,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(SPIAT)
 library(clinfun)
 library(ggplot2)
+library(reshape2)
+library(RColorBrewer)
 
 donors <- read.delim("data/Version_2/Donors.csv",sep=",")
 
@@ -113,23 +115,27 @@ trend_p$p_decreasing <- as.numeric(trend_p$p_decreasing)
 
 cell_proportions_across_images_agg$Location <- factor(cell_proportions_across_images_agg$Location,
                                                       levels=c("Stromal", "External", "Internal", "Infiltrated"))
+svglite::svglite(filename = "Results/PanelG.svg", height = 4, width = 2.5)
 ggplot(subset(cell_proportions_across_images_agg, Cell.Type %in% c("endothelial")), 
        aes(x=Stage, y=Proportion))+
-  geom_boxplot(aes(fill=Stage))+
+  geom_boxplot()+
+  geom_point(aes(x = Stage, y = Proportion), size = 1) +
   facet_grid(Location ~ ., scale="free_y")+
   ggtitle("Endothelial")+
   theme_bw()+
-  theme(axis.text.x = element_text(angle = 45, hjust=1))
+  theme(axis.text.x = element_text(angle = 45, hjust=1), legend.position = "none")
+dev.off()
 ```
 
 ## Composition of islets
 ```{r}
-cell_proportions_in_islet_all <- as.data.frame(cell_proportions_in_islet_all)
 cell_proportions_in_islet_all$Stage <- donors$stage[match(cell_proportions_in_islet_all$Slide, donors$slide)]
 
 ###Looking at the proportion of islet cells in the islets
 ##Percentage inside vs. the border
 ####Looking at non-islet cells in the islets
+cell_proportions_in_islet_all_only_islet <- cell_proportions_in_islet_all[cell_proportions_in_islet_all$Cell.Type %in% c("alpha",  "beta", "delta", "gamma"),]
+
 cell_proportions_in_islet_all_only_islet$Border <- as.numeric(as.character(cell_proportions_in_islet_all_only_islet$Border))
 cell_proportions_in_islet_all_only_islet$Inside <- as.numeric(as.character(cell_proportions_in_islet_all_only_islet$Inside))
 cell_proportions_in_islet_all_only_islet$Outside <- as.numeric(as.character(cell_proportions_in_islet_all_only_islet$Outside))
@@ -162,7 +168,6 @@ cell_proportions_in_islet_all_only_islet_area <- cell_proportions_in_islet_all_o
 temp_inside <- aggregate(Percentage_by_area_inside ~ Patient+Stage+Cell.Type, cell_proportions_in_islet_all_only_islet_area, mean)
 cell_proportions_in_islet_all_only_islet_area2 <- data.frame(temp_inside)
 
-library(reshape2)
 cell_proportions_in_islet_all_only_islet_area <- melt(cell_proportions_in_islet_all_only_islet_area2)
 cell_proportions_in_islet_all_only_islet_area$variable <- as.character(cell_proportions_in_islet_all_only_islet_area$variable)
 cell_proportions_in_islet_all_only_islet_area$variable[cell_proportions_in_islet_all_only_islet_area$variable == "Percentage_by_area_inside"] <- "Inside"
@@ -173,6 +178,7 @@ cell_proportions_in_islet_all_only_islet_area$Stage <- factor(cell_proportions_i
 ##PAPER 
 ggplot(subset(cell_proportions_in_islet_all_only_islet_area, Area == "Inside"), aes(x=Stage, y=Percentage_by_area))+
   geom_boxplot(aes(fill=Stage))+
+  geom_point(aes(x = Stage, y = Percentage_by_area), size = 1) +
   facet_grid(.~Cell.Type, scales='free_x')+
   theme_bw()+
   theme(axis.text.x = element_text(angle = 45, hjust=1))
@@ -226,13 +232,14 @@ totals_islet_cells <- aggregate(Percentage_in_islets_islet_cells ~ Patient + Sta
 
 totals_islet_cells <- aggregate(Total_in_islets_islet_cells ~ Patient + Stage, totals, mean)
 
+svglite::svglite(filename = "Results/PanelE.svg", height = 4, width = 2.5)
 ggplot(totals_islet_cells, aes(x=Stage, y=Total_in_islets_islet_cells))+
   geom_boxplot(aes(fill=Stage))+
+  geom_point(aes(x = Stage, y = Total_in_islets_islet_cells), size = 1) +
+  scale_fill_brewer(palette = "Dark2") +
   theme_bw()+
-  theme(axis.text.x = element_text(angle = 45, hjust=1))
-
-library(clinfun)
-
+  theme(axis.text.x = element_text(angle = 45, hjust=1), legend.position = "none")
+dev.off()
 g <- factor(totals_islet_cells$Stage, levels=c("Non-diabetic", "Onset", "Long-duration"), ordered=TRUE)
 jonckheere.test(totals_islet_cells$Total_in_islets_islet_cells, g, alternative = c("decreasing"))
 ```
@@ -276,10 +283,11 @@ jonckheere.test(distances_to_border_agg_stroma$Mean_d, g, alternative = c("incre
 #PAPER
 ggplot(distances_to_border_agg_endothelial, aes(x=Stage, y=Mean_d))+
   geom_boxplot(aes(fill=Stage))+
+  geom_point(aes(x = Stage, y = Mean_d), size = 1) +
   ylab("Distance to margin")+
   facet_grid(Area~., scale="free_y")+
   theme_bw()+
-  theme(axis.text.x = element_text(angle = 45, hjust=1))
+  theme(axis.text.x = element_text(angle = 45, hjust=1), legend.position = "none")
 
 
 

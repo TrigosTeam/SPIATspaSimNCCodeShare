@@ -16,7 +16,7 @@ imageL <- multiple_background_images(background_sample,
                                      names_of_cell_types,
                                      proportions_of_cell_types,
                                      plot_image = TRUE,
-                                     plot_colours = c("red", "darkgreen", "lightgray"))
+                                     plot_colours = c("#D95F02", "#7570B3", "lightgray"))
 # dev.off()
 # Compute mixing score and normalised mixing score ####
 ## use Immune cells as target

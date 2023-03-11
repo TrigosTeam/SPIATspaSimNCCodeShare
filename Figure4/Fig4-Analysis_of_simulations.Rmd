@@ -18,8 +18,8 @@ library(svglite)
 ## plot the images
 ```{r}
 load("Objects/Figure4_simulations.Rda")
-v1 <- c("Tumour","Immune")
-v2 <- c("red","darkgreen")
+v1 <- c("Tumour","Immune", "Others")
+v2 <- c("#D95F02", "#7570B3", "#E0E0E0")
 feature_colname <- "Cell.Type"
 svg_path <- "spe_plots/gradient"
 for (i in 1:4){

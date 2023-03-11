@@ -9,7 +9,7 @@ X <- rmpoispp(c(0.0002,0.0003,0.0005),win = owin(xrange = c(0,2000),
 df <- data.frame(X)
 svglite::svglite("Results/mix_bg-spatstat.svg", width = 5.5, height = 4)
 ggplot(df, aes(x, y, color = marks)) + geom_point(size = 1) + 
-    scale_color_manual(values=c("red", "darkgreen", "lightgray"))+
+    scale_color_manual(values=c("#D95F02", "#7570B3", "lightgray"))+
     theme_bw() +
     theme(axis.line = element_blank(),
           axis.text = element_blank(),
@@ -35,7 +35,7 @@ Y <- TIS(n_cells = 4000, bg_method = "Hardcore",
          oversampling_rate = 1.5, names_of_bg_cells = c("Tumour", "Immune", "Others"), 
          proportions_of_bg_cells = c(0.2, 0.3, 0.5), plot_image = T, 
          plot_categories = c("Tumour", "Immune", "Others"),
-         plot_colours = c("red", "darkgreen", "lightgray"))
+         plot_colours =c("#D95F02", "#7570B3", "lightgray"))
 dev.off()
 
 length(which(Y$Cell.Type == "Tumour")) #779

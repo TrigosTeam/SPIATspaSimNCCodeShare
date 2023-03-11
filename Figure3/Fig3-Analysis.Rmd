@@ -46,8 +46,8 @@ and `entropy_gradient_aggregated()` can be directly applied.
 ## Visualise the simulated colo images.
 ```{r}
 load("Objects/Figure3_simulated.Rda")
-v1 <- c("Tumour","Immune")
-v2 <- c("red","darkgreen")
+v1 <- c("Tumour","Immune", "Others")
+v2 <- c("#D95F02", "#7570B3", "#E0E0E0")
 feature_colname <- "Cell.Type"
 svg_path <- "spe_plots/Colocalization"
 for (i in 1:7){
@@ -126,18 +126,18 @@ save(colo_metrics_df, file = "Objects/Figure3_metrics.Rda")
 
 ## Plot the metrics.
 ```{r}
-# load("Figure3_metrics.Rda")
+# load("Objects/Figure3_metrics.Rda")
 DF <- colo_metrics_df
 DF <- melt(DF,  id.vars = "image", variable.name = "metrics")
 DF$value <- as.numeric(DF$value)
 DF[is.na(DF)] <- 0
 
 g <- ggplot(DF, aes(x = image, y = value, group = 7)) +
-    geom_line(linetype = "longdash", colour = "red")+
+    geom_line(linetype = "longdash", colour = "#D95F02")+
     geom_point() +
     facet_grid(metrics ~ .,scales="free") +
     theme(axis.text.x = element_text(angle = 90))
-svglite("Fig3_metrics.svg", width = 5, height = 7)
+svglite("Fig3_metrics.svg", width = 5, height = 6)
 plot(g)
 dev.off()
 ```

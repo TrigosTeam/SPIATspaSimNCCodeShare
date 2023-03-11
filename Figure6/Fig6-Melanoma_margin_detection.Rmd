@@ -63,11 +63,11 @@ MET <- define_celltypes(MET, categories = celltypes, category_colname = "Phenoty
                             names = names, new_colname = "Cell.Type")
 
 plot_cell_categories(primary, c("MEL","T","B","Ma","DC", "Undefined"),
-                     c("red", "blue", "darkgreen", "purple","orange", "darkgray"), feature_colname = "Cell.Type")
+                     c("#D95F02", "#7570B3", "#66A61E", "#E7298A","#E6AB02", "lightgray"), feature_colname = "Cell.Type")
 plot_cell_categories(REL, c("MEL","T","B","Ma","DC", "Undefined"),
-                     c("red", "blue", "darkgreen", "purple","orange", "darkgray"), feature_colname = "Cell.Type")
+                     c("#D95F02", "#7570B3", "#66A61E", "#E7298A","#E6AB02", "lightgray"), feature_colname = "Cell.Type")
 plot_cell_categories(MET, c("MEL","T","B","Ma","DC", "Undefined"),
-                     c("red", "blue", "darkgreen", "purple","orange", "darkgray"), feature_colname = "Cell.Type")
+                     c("#D95F02", "#7570B3", "#66A61E", "#E7298A","#E6AB02", "lightgray"), feature_colname = "Cell.Type")
 
 save(primary, REL,MET, file = "Objects/Pan_immune_spe.RData")
 ```
@@ -84,7 +84,7 @@ dim(primary)[2]
 colnames(colData(primary))
 categories_of_interest <- unique(primary$Cell.Type)
 plot_cell_categories(primary, categories_of_interest,
-                     colour_vector = c("gray","red","darkblue","darkgreen","orange"),
+                     colour_vector = c("lightgray","#D95F02","#7570B3","#66A61E","#E6AB02"),
                      "Cell.Type", layered = TRUE, cex = 0.2)
 
 start <- Sys.time()
@@ -102,7 +102,7 @@ print(end - start) #Time difference of 9.052007 secs
 dim(MET)[2]
 categories_of_interest <- unique(MET$Cell.Type)
 plot_cell_categories(MET, categories_of_interest,
-                     colour_vector = c("gray","red","orange","darkblue","darkgreen","purple"),
+                     colour_vector = c("lightgray","#D95F02","#7570B3","#66A61E","#E7298A"),
                      "Cell.Type", layered = TRUE, cex = 0.2)
 start <- Sys.time()
 sce_border_MEL3 <-identify_bordering_cells(MET, 
@@ -119,9 +119,9 @@ print(end - start) #Time difference of 23.94411 mins
 # REL MEL
 dim(REL)[2]
 categories_of_interest <- unique(REL$Cell.Type)
-plot_cell_categories(REL, categories_of_interest,
-                     colour_vector = c("red","gray","darkblue","orange","darkgreen"),
-                     "Cell.Type", cex = 0.2)
+plot_cell_categories(REL, c("MEL" ,"T", "DC", "B", "Undefined"),
+                     colour_vector = c("#D95F02","#7570B3","#D95F02","#66A61E","lightgray"),
+                     "Cell.Type", cex = 0.2, layered = TRUE)
 start <- Sys.time()
 sce_border_MEL2 <-identify_bordering_cells(REL, 
                                            reference_cell = "MEL", n_to_exclude = 100)

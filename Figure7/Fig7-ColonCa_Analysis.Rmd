@@ -233,6 +233,7 @@ trend_p$p_down_adj <- p.adjust(trend_p$p_down, method="BH")
 ggplot(subset(total_composition_mean, Cell.Type %in% c("CD4+ T cells CD45RO+","CD8+ T cells")), 
        aes(x=Class, y=Percentage))+
   geom_boxplot(aes(fill=Class))+
+  geom_point(aes(x=Class, y=Percentage))+
   facet_grid(.~Cell.Type)+
   theme_bw()+
   theme(axis.text.x = element_text(angle = 45, hjust=1))
@@ -241,6 +242,7 @@ ggplot(subset(total_composition_mean, Cell.Type %in% c("CD4+ T cells CD45RO+","C
 ggplot(subset(total_composition_mean, Cell.Type %in% c("Tregs")), 
        aes(x=Class, y=Percentage))+
   geom_boxplot(aes(fill=Class))+
+  geom_point(aes(x=Class, y=Percentage))+
   facet_grid(.~Cell.Type)+
   theme_bw()+
   theme(axis.text.x = element_text(angle = 45, hjust=1))
@@ -249,6 +251,7 @@ ggplot(subset(total_composition_mean, Cell.Type %in% c("Tregs")),
 ggplot(total_composition_mean[total_composition_mean$Cell.Type == "B cells",], 
        aes(x=Class, y=Percentage))+
   geom_boxplot(aes(fill=Class))+
+  geom_point(aes(x=Class, y=Percentage))+
   facet_grid(.~Group, scales = "free")+
   theme_bw()+
   #ggtitle("B cells")+
