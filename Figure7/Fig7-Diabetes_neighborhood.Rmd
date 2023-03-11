@@ -41,9 +41,10 @@ neighorhoods_other_all$Part <- donors$part[match(neighorhoods_other_all$Slide, d
 neighorhoods_other_size <- unique(neighorhoods_other_all[,c("Neighborhood", "Total_number_of_cells", "Patient", "Stage")])
 neighorhoods_other_size <- aggregate( Total_number_of_cells ~ Patient+Stage, neighorhoods_other_size, mean)
 
-library(ggplot2)
+
 ggplot(neighorhoods_other_size, aes(x=Stage, y=Total_number_of_cells))+
   geom_boxplot(aes(fill=Stage))+
+  geom_point(aes(x=Stage, y=Total_number_of_cells))+
   ylab("Stromal cluster size")+
   theme_bw()+
   theme(panel.border = element_blank(), panel.grid.major = element_blank(),
@@ -57,6 +58,7 @@ neighorhoods_other_endothelial_agg$Stage <- factor(neighorhoods_other_endothelia
 ##PAPER
 ggplot(neighorhoods_other_endothelial_agg, aes(x=Stage, y=Percentage))+
   geom_boxplot(aes(fill=Stage))+
+  geom_point(aes(x=Stage, y=Percentage))+
   ylab("Percentage of endothelial cells")+
   theme_bw()+
   theme(panel.border = element_blank(), panel.grid.major = element_blank(),
@@ -71,6 +73,7 @@ neighorhoods_other_all_agg$Stage <- factor(neighorhoods_other_all_agg$Stage,
 ##PAPER
 ggplot(neighorhoods_other_all_agg, aes(x=Stage, y=Neighborhood))+
   geom_boxplot(aes(fill=Stage))+
+  geom_point(aes(x=Stage, y=Neighborhood))+
   ylab("Number of stromal clusters")+
   theme_bw()+
   theme(panel.border = element_blank(), panel.grid.major = element_blank(),
@@ -96,6 +99,7 @@ neighorhoods_immune_all_agg$Stage <- factor(neighorhoods_immune_all_agg$Stage,
 ##PAPER
 ggplot(subset(neighorhoods_immune_all_agg, Cell.Type == "Tc"), aes(x=Stage, y=Percentage))+
   geom_boxplot(aes(fill = Stage))+
+  geom_point(aes(x=Stage, y=Percentage))+
   facet_grid(.~Cell.Type)+
   ylab("Percentage of immune cells")+
   theme_bw()+
@@ -109,6 +113,7 @@ ggplot(neighorhoods_immune_all_agg, aes(x=Stage, y=Percentage))+
   ylab("Percentage of immune cells")
 
 
+
 neighorhoods_immune_all_agg <- unique(neighorhoods_immune_all[,c("Neighborhood", "Patient", "Slide", "Stage")])
 neighorhoods_immune_all_agg <- aggregate(Neighborhood ~ Patient + Stage, neighorhoods_immune_all_agg, length)
 
@@ -118,6 +123,7 @@ neighorhoods_immune_all_agg$Stage <- factor(neighorhoods_immune_all_agg$Stage,
 ##PAPER
 ggplot(neighorhoods_immune_all_agg, aes(x=Stage, y=Neighborhood))+
   geom_boxplot(aes(fill=Stage))+
+  geom_point(aes(x=Stage, y=Neighborhood))+
   ylab("Number of immune clusters")+
   theme_bw()+
   theme(panel.border = element_blank(), panel.grid.major = element_blank(),

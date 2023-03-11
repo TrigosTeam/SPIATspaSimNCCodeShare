@@ -18,7 +18,8 @@ cell_types_of_interest <- c("Tumor","Macrophage")
 feature_colname <- "Cell.Type2"
 categories <- c("Tumor", "T_cell", "None", "Helper_T_cell", "B_cells", 
                 "Macrophage", "Cyto_T_cell", "Neutrophil")
-mycolors <- c("red","lightblue","lightgray","lightgreen","pink","darkgreen","yellowgreen","gray")
+mycolors <- c("#FC8D62","#66C2A5","lightgray","#A6D854","#E78AC3","#7570B3","#FFD92F","#B3B3B3")
+
 
 # svglite::svglite(filename = "patient_spe/plot_Patient4.svg", width = 6, height= 4.8)
 plot_cell_categories(spe, categories, mycolors, feature_colname)
@@ -39,9 +40,9 @@ calculate_spatial_autocorrelation(grid)
 spe <- MIBI_spe[[16]]
 cell_types_of_interest <- c("Tumor","Macrophage")
 
-# svglite::svglite("patient_spe/plot_Patient16.svg", width = 6, height= 4.8)
+svglite::svglite("patient_spe/plot_Patient16.svg", width = 6, height= 4.8)
 plot_cell_categories(spe, categories, mycolors, feature_colname)
-# dev.off()
+dev.off()
 
 # svglite::svglite("patient_gradient/grid_Patient16.svg", width = 6, height= 4.8)
 grid <- grid_metrics(spe, FUN = calculate_entropy, cell_types_of_interest=cell_types_of_interest,

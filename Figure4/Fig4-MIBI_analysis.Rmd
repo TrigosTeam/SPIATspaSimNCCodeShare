@@ -27,8 +27,8 @@ spe2 <- MIBI_spe[[4]]
 spe2$Cell.Type <- spe2$Cell.Type2
 
 
-mycolors <- c("red", "blue","yellowgreen","lightgreen","pink", "lightblue",
-              "gray", "lightgray")
+mycolors <- c("#FC8D62", "#7570B3","#FFD92F","#A6D854","#E78AC3", "#66C2A5",
+              "#B3B3B3", "lightgray")
 mycells <- c("Tumor", "Macrophage", "B_cells", "Helper_T_cell",
               "T_cell","Neutrophil", "Cyto_T_cell", "None")
 # plot Patient 1

@@ -20,7 +20,7 @@ library(svglite)
 ```{r}
 load("Objects/Figure5_simulations.Rda")
 categories <- c("Tumour","Immune")
-colour_vector <- c("red","darkgreen")
+colour_vector <- c("#FC8D62","#7570B3")
 for (i in 1:length(Sim_hetero_list)){
   spe<-Sim_hetero_list[[i]]
   svglite(paste("spe_plots/",attr(spe,"name"),".svg", sep =""), 

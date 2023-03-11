@@ -19,7 +19,7 @@ image_struc1 <- image_struc1[[1]]
 attr(image_struc1,"name") <- "NoClearTumourC"
 
 # svglite("Results/NoClearTumorC.svg", width = 6, height = 4.8)
-plot_cell_categories(image_struc1, c("Tumour","Immune","Others"),c("red","darkgreen","lightgray"),"Cell.Type")
+plot_cell_categories(image_struc1, c("Tumour","Immune","Others"),c("#D95F02","#7570B3","lightgray"),"Cell.Type")
 # dev.off()
 ```
 
@@ -59,7 +59,7 @@ image_struc2 <- image_struc2[[1]]
 # name
 attr(image_struc2,"name")<-"MixingTumourImmuneC"
 # svglite("Results/MixingTumourImmuneC.svg", width = 6, height = 4.8)
-plot_cell_categories(image_struc2, c("Tumour","Immune","Others"),c("red","darkgreen","lightgray"),"Cell.Type")
+plot_cell_categories(image_struc2, c("Tumour","Immune","Others"),c("#D95F02","#7570B3","lightgray"),"Cell.Type")
 # dev.off()
 
 
@@ -98,7 +98,7 @@ image_struc3 <- image_struc3[[1]]
 attr(image_struc3,"name") <- "ImmuneR"
 
 # svglite("Results/ImmuneR.svg", width = 6, height = 4.8)
-plot_cell_categories(image_struc3, c("Tumour","Immune","Others"),c("red","darkgreen","lightgray"),"Cell.Type")
+plot_cell_categories(image_struc3, c("Tumour","Immune","Others"),c("#D95F02","#7570B3","lightgray"),"Cell.Type")
 # dev.off()
 
 R_BC(image_struc3,"Tumour","Cell.Type") #0.09742441

@@ -1,14 +1,14 @@
 library(spatstat)
 library(SPIAT)
 library(spaSim)
-load("Objects/PCa_spe.Rda")
+load("../NoteN2/Objects/PCa_spe.Rda")
 
 # Define cell types
 v1 <- c("AMACR", "CD3,CD4", "CD3,CD8")
-v2 <- c("red", "darkgreen", "darkgreen")
+v2 <- c("#D95F02", "#7570B3", "#7570B3")
 v3 <- c("Tumor", "Immune", "Immune")
 v4 <- c("Tumor", "Immune")
-v5 <- c("red", "darkgreen")
+v5 <- c("#D95F02", "#7570B3")
 
 spe <- PCa_spe[[13]][[6]]
 spe <- define_celltypes(spe, v1, "Phenotype", v3, "Cell.Type")
@@ -94,7 +94,7 @@ sim <- TIS(bg_sample = bg,
                               double_ring_infiltration_proportions = 0.6)),
            plot_image = T,
            plot_categories = c("Tumour", "Immune", "Others"),
-           plot_colours = c("red", "darkgreen", "lightgray"))
+           plot_colours = c("#D95F02", "#7570B3", "lightgray"))
 dev.off()
 
 svglite::svglite("ring_spaSim-amacr.svg", width = 5, height = 4)
