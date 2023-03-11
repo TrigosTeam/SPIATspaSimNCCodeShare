@@ -14,13 +14,13 @@ for (metric in metrics){
     fit <- lm( final_metrics[, metric_real] ~ final_metrics[, metric_sim])
     print(metric)
     print(summary(fit))
-    svg(paste0("Results/", metric, ".svg"), width = 3, height = 3)
+    # svg(paste0("Results/", metric, ".svg"), width = 3, height = 3)
     g <- ggplot(final_metrics, aes(get(metric_real), get(metric_sim))) +
         geom_point() +
         geom_smooth(method = "lm") +
         ggtitle(metric)
     plot(g)
-    dev.off()
+    # dev.off()
 }
 
 metrics_log <- c( "ms", "nms")
@@ -32,13 +32,13 @@ for (metric in metrics_log){
     fit <- lm( final_metrics[, metric_real] ~ final_metrics[, metric_sim])
     print(metric)
     print(summary(fit))
-    svg(paste0("Results/", metric, "_log.svg"), width = 3, height = 3)
+    # svg(paste0("Results/", metric, "_log.svg"), width = 3, height = 3)
     g <- ggplot(final_metrics, aes(log(get(metric_real)), log(get(metric_sim)))) +
         geom_point() +
         geom_smooth(method = "lm") +
         ggtitle(metric)
     plot(g)
-    dev.off()
+    # dev.off()
 }
 
 

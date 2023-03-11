@@ -28,9 +28,9 @@ for (i in 1:length(grad_imageL)){
     v <- as.numeric(grad$gradient_df[1,3:(length(gradient_pos)+2)])
     
     # plot the gradient
-    svglite::svglite(paste("Results/entropy_", attr(spe, "name"),".svg", sep=""), width = 5, height = 4)
+    # svglite::svglite(paste("Results/entropy_", attr(spe, "name"),".svg", sep=""), width = 5, height = 4)
     plot(v, type = "b", lty = 2, pch = 16, cex = 1, ylim = c(0,1))
-    dev.off()
+    # dev.off()
     # get the peak of the gradient
     peak <- grad$peak
     peaks_all[i] <- peak

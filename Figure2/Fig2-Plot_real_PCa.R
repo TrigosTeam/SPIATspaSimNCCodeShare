@@ -3,7 +3,7 @@ load("../NoteN2/Objects/PCa_spe.Rda")
 
 v1 <- c("AMACR" , "CD3,CD8" , "CD3,CD4" )
 v2 <- c("Tumor", "Immune", "Immune")
-v3 <- c("red", "darkgreen", "lightgray")
+v3 <- c("#D95F02", "#7570B3", "lightgray")
 v4 <- c("Tumor", "Immune", "Undefined")
 
 spe_1 <- PCa_spe[[6]][[6]]
@@ -20,7 +20,7 @@ spe_3 <- define_celltypes(spe_3, categories = v1, "Phenotype", names = v2, "Cell
 
 svglite::svglite("Results/real_imgs/clusters.svg", width = 5, height = 4)
 plot_cell_categories(spe_1, categories_of_interest = c( "Tumor", "Undefined", "Immune"), 
-                     colour_vector = c("red", "lightgray", "darkgreen"), 
+                     colour_vector = c("#D95F02", "lightgray", "#7570B3"), 
                      feature_colname = "Cell.Type",
                      cex = 0.8, layered = T)
 dev.off()
@@ -28,7 +28,7 @@ dev.off()
 
 svglite::svglite("Results/real_imgs/rings.svg", width = 5, height = 4)
 plot_cell_categories(spe_2, categories_of_interest = c( "Tumor", "Undefined", "Immune"), 
-                     colour_vector = c("red", "lightgray", "darkgreen"), 
+                     colour_vector = c("#D95F02", "lightgray", "#7570B3"), 
                      feature_colname = "Cell.Type",
                      cex = 0.8, layered = T)
 dev.off()
@@ -36,7 +36,7 @@ dev.off()
 
 svglite::svglite("Results/real_imgs/vessels.svg", width = 5, height = 4)
 plot_cell_categories(spe_3, categories_of_interest = c( "Tumor", "Undefined", "Immune"), 
-                     colour_vector = c("red", "lightgray", "darkgreen"), 
+                     colour_vector = c("#D95F02", "lightgray", "#7570B3"), 
                      feature_colname = "Cell.Type",
                      cex = 0.8, layered = T)
 dev.off()

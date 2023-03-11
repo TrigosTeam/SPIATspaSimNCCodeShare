@@ -33,7 +33,7 @@ for ( i in 1:845){
     }
     
     even_bg_paired[[i]] <- list(image = image_best, jitter  = j_best)
-    # save(even_bg_paired, file = "Objects/even_bg_paired.Rda")
+    save(even_bg_paired, file = "Objects/even_bg_paired.Rda")
     
     print(i)
 }

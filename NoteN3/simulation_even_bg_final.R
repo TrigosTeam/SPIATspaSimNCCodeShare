@@ -93,12 +93,11 @@ new <- calculate_centre_locations(new)
 
 library(spaSim)
 library(SPIAT)
-load("Objects/args_sim_sampled.Rdata")
 
 even_sim_paired <- list()
 
 infiltration_types <- c("nonbeta", "immune", "endothelial", "others")
-for (i in 486:845){
+for (i in 1:845){
     args <- new[i, ]
 
     bg <- even_bg_paired[[i]]$image
@@ -240,7 +239,7 @@ for (i in 486:845){
                               feature_colname = "Cell.Type")
     print(g)
     even_sim_paired[[i]] <- image_spe
-    # save(even_sim_paired, file = "Objects/even_sim_paired.Rdata")
+    save(even_sim_paired, file = "Objects/even_sim_paired.Rdata")
 }
 
 

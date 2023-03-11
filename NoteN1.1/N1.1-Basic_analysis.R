@@ -1,4 +1,5 @@
 library(SPIAT) #v1.0.4
+library(svglite)
 # read file and format data ####
 raw_inform_data <- "data/S6_[49209,17530]_cell_seg_data_updated.txt"
 
@@ -87,10 +88,10 @@ marker_boxplot_log_scale(formatted_image, "CD8")
 # dev.off()
 
 # plot cell categories ####
-# svglite("plot_cell_category.svg", height=4.8, width=6)
+# svglite("Results/plot_cell_category.svg", height=4.8, width=7)
 
 # plot cells and markers ####
-my_colors <- c("darkgrey", "skyblue", "darkcyan", "lightgreen", "orange")
+my_colors <- c("#D95F02", "#7570B3", "#1B9E77", "#66A61E", "#E7298A")
 plot_cell_categories(formatted_image, c("Tumour", "T_helper", "T_cyto", "T_other", "PDL1"), 
                      my_colors, "Cell.Type")
 # dev.off()

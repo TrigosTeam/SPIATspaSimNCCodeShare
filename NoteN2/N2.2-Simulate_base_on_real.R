@@ -37,7 +37,7 @@ mu <- as.numeric(583.1824)
 
 set.seed(610)
 X <- rThomas(kappa = kappa, scale = scale, mu = mu, win = owin(xrange=c(20,2666),
-                                                          yrange= c(13,1993)))
+                                                          yrange= c(0,1993)))
 svglite::svglite("thomas.svg", width = 5, height = 4)
 plot(X, cex = 0.5, pch = 20)
 dev.off()

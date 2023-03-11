@@ -1,3 +1,19 @@
+library(dplyr)
+library(ggplot2)
+get_colData <- function(spe_object){
+    formatted_data <- data.frame(SummarizedExperiment::colData(spe_object))
+    formatted_data <- cbind(formatted_data, 
+                            data.frame(SpatialExperiment::spatialCoords(spe_object)))
+    if (is.null(formatted_data$Cell.ID)){
+        formatted_data <- formatted_data %>% tibble::rownames_to_column("Cell.ID")
+    }
+    
+    # delete column `sample_id`
+    formatted_data$sample_id <- NULL
+    
+    return(formatted_data)
+}
+
 predict_phenotype_log_scale <- function (sce_object, thresholds = NULL, tumour_marker, baseline_markers, 
           nuclear_marker = NULL, reference_phenotypes = FALSE, markers_to_phenotype = NULL, 
           plot_distribution = TRUE) 

@@ -1,20 +1,20 @@
 library(spaSim)
 
 # simulate bg cells ####
-svglite::svglite("simulated_imgs/bg.svg", height = 4, width = 5)
+svglite::svglite("Results/simulated_imgs/bg.svg", height = 4, width = 5)
 set.seed(610)
 bg <- simulate_background_cells(n_cells = 5000, method = "Hardcore",
                                 width = 2000, height = 2000, min_d = 10,
                                 oversampling_rate = 1.5)
 dev.off()
 # simulate mixed bg ####
-svglite::svglite("simulated_imgs/mix_bg.svg", height = 4, width = 5)
+svglite::svglite("Results/simulated_imgs/mix_bg.svg", height = 4, width = 5)
 set.seed(610)
 sim_mix <- simulate_mixing(bg_sample = bg, 
                            idents = c("Tumour", "Immune", "Others"),
                            props = c(0.2, 0.3, 0.5),
                            plot_image = TRUE,
-                           plot_colours = c("red", "darkgreen", "lightgray"))
+                           plot_colours = c("#D95F02", "#7570B3", "lightgray"))
 dev.off()
 # simulate clusters ####
 properties_of_clusters <- list(
@@ -49,7 +49,7 @@ properties_of_clusters <- list(
         infiltration_types = "Others", infiltration_proportions = 0.2)
 )
 
-svglite::svglite("simulated_imgs/clusters.svg", height = 4, width = 5)
+svglite::svglite("Results/simulated_imgs/clusters.svg", height = 4, width = 5)
 set.seed(610)
 sim_cluster <- simulate_clusters(
     bg_sample = bg1,
@@ -57,7 +57,7 @@ sim_cluster <- simulate_clusters(
     cluster_properties = properties_of_clusters,
     plot_image = T,
     plot_categories = c("Tumour", "Immune", "Others"),
-    plot_colours = c("red", "darkgreen", "lightgray"))
+    plot_colours = c("#D95F02", "#7570B3", "lightgray"))
 dev.off()
 
 
@@ -101,7 +101,7 @@ properties_of_rings <- list(
     )
 )
 
-svglite::svglite("simulated_imgs/rings.svg", height = 4, width = 5)
+svglite::svglite("Results/simulated_imgs/rings.svg", height = 4, width = 5)
 set.seed(610)
 sim_ring <- simulate_immune_rings(
     bg_sample = bg1,
@@ -109,7 +109,7 @@ sim_ring <- simulate_immune_rings(
     ir_properties = properties_of_rings,
     plot_image = T,
     plot_categories = c("Tumour", "Immune", "Others"),
-    plot_colours = c("red", "darkgreen", "lightgray"))
+    plot_colours = c("#D95F02", "#7570B3", "lightgray"))
 dev.off()
 
 # simulate vessles ####
@@ -160,7 +160,7 @@ sim_bigC <- simulate_clusters(
     cluster_properties = properties_of_bigC,
     plot_image = T,
     plot_categories = c("Tumour", "Immune", "Others"),
-    plot_colours = c("red", "darkgreen", "lightgray"))
+    plot_colours = c("#D95F02", "#7570B3", "lightgray"))
 
 # simulate vessels
 stripe_properties = list(
@@ -173,12 +173,12 @@ stripe_properties = list(
         )
     )
 
-svglite::svglite("simulated_imgs/vessels.svg", height = 4, width = 5)
+svglite::svglite("Results/simulated_imgs/vessels.svg", height = 4, width = 5)
 set.seed(10)
 sim_vessle <- simulate_stripes(bg_sample = sim_bigC,
                                n_stripe_type = 1,
                                stripe_properties = stripe_properties,
                                plot_image = T,
                                plot_categories = c("Tumour", "Immune", "Others"),
-                               plot_colours = c("red", "darkgreen", "lightgray"))
+                               plot_colours = c("#D95F02", "#7570B3", "lightgray"))
 dev.off()
