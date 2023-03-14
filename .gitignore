@@ -13,7 +13,9 @@ clustering_plots
 *.svg
 *.png
 *.jpg
+*.pdf
 *.tiff
+*.csv
 .DS_Store
 renv
 .Rprofile
