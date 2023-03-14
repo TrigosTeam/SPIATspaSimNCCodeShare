@@ -43,6 +43,8 @@ for (metric in metrics_log){
 
 
 
+
+
 # R-square
 # avg_p_dist: 0.90
 # avg_min_dist_1: 0.33
@@ -51,3 +53,25 @@ for (metric in metrics_log){
 # auc: 0.24
 # ms: 0.35
 # nms: 0.44
+
+## Plot the paired real and simulated images
+
+load("Objects/diabetes_real_spe.Rda")
+load("Objects/even_sim_paired_final.Rda")
+spe <- even_sim_paired_final[[3]]
+library(SPIAT)
+plot_cell_categories(spe, categories_of_interest = c("beta", "nonbeta", "immune", "endothelial", "others"),
+                     colour_vector = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3", "lightgray" ),
+                     feature_colname = "Cell.Type")
+
+spe2 <- Real[[3]]
+
+spe2 <- define_celltypes(spe2, categories = c("beta", "nonbeta", "ductal", "stromal", 
+                                              "unknown", "acinar", "endothelial", "Tc", "macrophage", 
+                                              "neutrophil", "otherimmune", "B"), category_colname = "Cell.Type3",
+                         names = c("beta", "nonbeta", "others", "others", "others", 
+                                   "others", "endothelial", "immune", "immune", "immune", "immune", "immune"),
+                         new_colname = "Cell.Type5")
+plot_cell_categories(spe2, categories_of_interest = c("beta", "nonbeta", "immune", "endothelial", "others"),
+                     colour_vector = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3", "lightgray" ),
+                     feature_colname = "Cell.Type5")
