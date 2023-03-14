@@ -28,7 +28,10 @@ image_list <- multiple_images_with_immune_rings(bg_sample = bg1,
                                                 ring_shape = 2,
                                                 cluster_loc_x = -600,
                                                 cluster_loc_y = -200,
-                                                prop_ring_infiltration = 0.6)
+                                                prop_ring_infiltration = 0.6,
+                                                plot_image = TRUE,
+                                                plot_categories = c("Tumour", "Immune", "Others"),
+                                                plot_colours = c("red", "darkgreen", "lightgray"))
 ```
 
 ```{r}
