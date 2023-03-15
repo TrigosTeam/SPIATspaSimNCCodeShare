@@ -55,7 +55,7 @@ neighorhoods_other_endothelial <- neighorhoods_other_all[neighorhoods_other_all$
 neighorhoods_other_endothelial_agg <- aggregate(Percentage ~ Patient+Stage, neighorhoods_other_endothelial, mean)
 neighorhoods_other_endothelial_agg$Stage <- factor(neighorhoods_other_endothelial_agg$Stage,
                                                    levels = c("Non-diabetic", "Onset", "Long-duration"))
-##PAPER
+##PAPER (j)
 ggplot(neighorhoods_other_endothelial_agg, aes(x=Stage, y=Percentage))+
   geom_boxplot(aes(fill=Stage))+
   geom_point(aes(x=Stage, y=Percentage))+
@@ -63,6 +63,12 @@ ggplot(neighorhoods_other_endothelial_agg, aes(x=Stage, y=Percentage))+
   theme_bw()+
   theme(panel.border = element_blank(), panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+## Wilcoxon test 
+temp <- neighorhoods_other_endothelial_agg
+wilcox.test(temp[temp$Stage == "Onset", "Percentage"], temp[temp$Stage == "Non-diabetic", "Percentage"],
+            alternative = "less")
+wilcox.test(temp[temp$Stage == "Onset", "Percentage"], temp[temp$Stage == "Long-duration", "Percentage"],
+            alternative = "less")
 
 
 neighorhoods_other_all_agg <- unique(neighorhoods_other_all[,c("Neighborhood", "Patient", "Slide", "Stage")])
@@ -70,7 +76,7 @@ neighorhoods_other_all_agg <- aggregate(Neighborhood ~ Patient + Stage, neighorh
 neighorhoods_other_all_agg$Stage <- factor(neighorhoods_other_all_agg$Stage,
                                            levels=c("Non-diabetic", "Onset", "Long-duration"))
 
-##PAPER
+##PAPER (h)
 ggplot(neighorhoods_other_all_agg, aes(x=Stage, y=Neighborhood))+
   geom_boxplot(aes(fill=Stage))+
   geom_point(aes(x=Stage, y=Neighborhood))+
@@ -79,8 +85,12 @@ ggplot(neighorhoods_other_all_agg, aes(x=Stage, y=Neighborhood))+
   theme(panel.border = element_blank(), panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 
-
-
+## Wilcoxon test
+temp <- neighorhoods_other_all_agg
+wilcox.test(temp[temp$Stage == "Onset", "Neighborhood"], temp[temp$Stage == "Non-diabetic", "Neighborhood"],
+            alternative = "greater")
+wilcox.test(temp[temp$Stage == "Onset", "Neighborhood"], temp[temp$Stage == "Long-duration", "Neighborhood"],
+            alternative = "greater")
 
 
 neighorhoods_immune_all$Number_of_cells <- as.numeric(as.character(neighorhoods_immune_all$Number_of_cells))
@@ -96,7 +106,7 @@ neighorhoods_immune_all$Part <- donors$part[match(neighorhoods_immune_all$Slide,
 neighorhoods_immune_all_agg <- aggregate(Percentage ~ Patient+Cell.Type+Stage, neighorhoods_immune_all, mean)
 neighorhoods_immune_all_agg$Stage <- factor(neighorhoods_immune_all_agg$Stage,
                                             levels = c("Non-diabetic", "Onset", "Long-duration"))
-##PAPER
+##PAPER (k)
 ggplot(subset(neighorhoods_immune_all_agg, Cell.Type == "Tc"), aes(x=Stage, y=Percentage))+
   geom_boxplot(aes(fill = Stage))+
   geom_point(aes(x=Stage, y=Percentage))+
@@ -120,7 +130,7 @@ neighorhoods_immune_all_agg <- aggregate(Neighborhood ~ Patient + Stage, neighor
 neighorhoods_immune_all_agg$Stage <- factor(neighorhoods_immune_all_agg$Stage,
                                             levels=c("Non-diabetic", "Onset", "Long-duration"))
 
-##PAPER
+##PAPER (i)
 ggplot(neighorhoods_immune_all_agg, aes(x=Stage, y=Neighborhood))+
   geom_boxplot(aes(fill=Stage))+
   geom_point(aes(x=Stage, y=Neighborhood))+
@@ -129,6 +139,12 @@ ggplot(neighorhoods_immune_all_agg, aes(x=Stage, y=Neighborhood))+
   theme(panel.border = element_blank(), panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 
+## Wilcoxon test
+temp <- neighorhoods_immune_all_agg
+wilcox.test(temp[temp$Stage == "Onset", "Neighborhood"], temp[temp$Stage == "Non-diabetic", "Neighborhood"],
+            alternative = "greater")
+wilcox.test(temp[temp$Stage == "Onset", "Neighborhood"], temp[temp$Stage == "Long-duration", "Neighborhood"],
+            alternative = "greater")
 
 neighorhoods_immune_size <- unique(neighorhoods_immune_all[,c("Neighborhood", "Total_number_of_cells", "Patient", "Stage")])
 neighorhoods_immune_size$Total_number_of_cells <- as.numeric(as.character(neighorhoods_immune_size$Total_number_of_cells))
