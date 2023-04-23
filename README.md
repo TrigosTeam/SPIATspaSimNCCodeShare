@@ -2,19 +2,14 @@
 
 This repo holds the code for the revised manuscript submitted on 20 Dec 2022.
 
-The data analyses were performed by SPIAT v1.0.4. The simulations were performed by spaSim v1.0.2.
+The data analyses were performed with SPIAT v1.0.4. Data analyses involving (normalised) mixing score calculation were performed with SPIAT v1.0.6. The simulations were performed with spaSim v1.0.2.
 
-To download the versions of SPIAT and spaSim that reproduce the results presented, you can use the version on Bioconductor, release 3.16:
+To download the versions of SPIAT and spaSim that reproduce the results presented, you can use the versions on Bioconductor, release 3.16:
 
 SPIAT: https://bioconductor.org/packages/SPIAT/
 
 spaSim: https://bioconductor.org/packages/spaSim/
 
-From Github:
-```r
-devtools::install_github("TrigosTeam/SPIAT", ref = "RELEASE_3_16")
-devtools::install_github("TrigosTeam/spaSim", ref = "RELEASE_3_16")
-```
 
 Access the tutorial at: [SPIAT vignette](https://trigosteam.github.io/SPIAT/articles/SPIAT.html) and [spaSim vignette](https://trigosteam.github.io/spaSim/)
 
