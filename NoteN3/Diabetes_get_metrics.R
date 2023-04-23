@@ -1,3 +1,4 @@
+library(SPIAT) #v1.0.6
 load("Objects/diabetes_real_spe.Rda")
 load("Objects/even_sim_paired_final.Rda")
 

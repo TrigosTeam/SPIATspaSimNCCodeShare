@@ -74,9 +74,9 @@ for (i in 1:length(grad_imageL)){
     v <- unlist(grad)
     
     # plot the gradient
-    # svglite::svglite(paste("Results/ms/", attr(spe, "name"),".svg", sep=""), width = 5, height = 4)
-    plot(v, type = "b", lty = 2, pch = 16, cex = 1, ylim = c(0,2.2))
-    # dev.off()
+    svglite::svglite(paste("Results/ms/", attr(spe, "name"),".svg", sep=""), width = 5, height = 4)
+    plot(v, type = "b", lty = 2, pch = 16, cex = 1, ylim = c(0,1.1))
+    dev.off()
 }
 
 ## Using Immune cells as reference cells. (Panel C)
@@ -115,7 +115,7 @@ for (i in 1:length(grad_imageL)){
     v <- unlist(grad)
     
     # plot the gradient
-    # svglite::svglite(paste("Results/nms_immune/", attr(spe, "name"),".svg", sep=""), width = 5, height = 4)
-    plot(v, type = "b", lty = 2, pch = 16, cex = 1, ylim = c(0,3))
-    # dev.off()
+    svglite::svglite(paste("Results/nms_immune/", attr(spe, "name"),".svg", sep=""), width = 5, height = 4)
+    plot(v, type = "b", lty = 2, pch = 16, cex = 1, ylim = c(0,1.5))
+    dev.off()
 }

@@ -1,5 +1,5 @@
 library(spaSim)
-library(SPIAT)
+library(SPIAT) # v1.0.6
 library(ggplot2)
 library(svglite)
 

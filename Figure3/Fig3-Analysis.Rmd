@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Libraries
 ```{r, message = FALSE}
-library(SPIAT)
+library(SPIAT) # v1.0.6
 library(reshape2)
 library(ggplot2)
 library(svglite)

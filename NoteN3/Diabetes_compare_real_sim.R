@@ -51,8 +51,8 @@ for (metric in metrics_log){
 # avg_min_dist_2: 0.08
 # CIN: 0.52
 # auc: 0.24
-# ms: 0.35
-# nms: 0.44
+# ms: 0.47
+# nms: 0.49
 
 ## Plot the paired real and simulated images
 
