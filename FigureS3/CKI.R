@@ -9,7 +9,7 @@ for (i in 1:1000){
                  names_of_bg_cells = c("Others", "CellA", "CellB"),
                  proportions_of_bg_cells = c(0.7, 0.2, 0.1), 
                  plot_image = TRUE,
-                 plot_colours = c("lightgray", "red", "darkblue"))
+                 plot_colours = c("lightgray", "#D95F02", "#7570B3"))
     
     df_cross <- calculate_cross_functions(image, 
                                           cell_types_of_interest = c("CellA", "CellB"),
@@ -49,7 +49,7 @@ for (i in 1:500){
                 immune_ring_infiltration_proportions = c(0.9))),
         plot_image = TRUE,
         plot_categories = c("Cell_A", "Cell_B", "Others"),
-        plot_colours = c("red", "darkblue", "gray")
+        plot_colours = c( "#D95F02", "#7570B3", "lightgray")
     )
     
     df_cross <- calculate_cross_functions(image, 
@@ -88,7 +88,7 @@ for (i in 1:500){
                 immune_ring_infiltration_proportions = c(0.9))),
         plot_image = TRUE,
         plot_categories = c("Cell_A", "Cell_B", "Others"),
-        plot_colours = c("red", "darkblue", "gray")
+        plot_colours = c( "#D95F02", "#7570B3", "lightgray")
     )
     
     df_cross <- calculate_cross_functions(image, 
@@ -130,7 +130,7 @@ for (i in 1:500){
                 immune_ring_infiltration_proportions = c(0.9))),
         plot_image = TRUE,
         plot_categories = c("Cell_A", "Cell_B", "Others"),
-        plot_colours = c("red", "darkblue", "gray")
+        plot_colours = c( "#D95F02", "#7570B3", "lightgray")
     )
     
     df_cross <- calculate_cross_functions(image, 
@@ -170,7 +170,7 @@ for (i in 1:500){
                 immune_ring_infiltration_proportions = c(0.2))),
         plot_image = TRUE,
         plot_categories = c("Cell_A", "Cell_B", "Others"),
-        plot_colours = c("red", "darkblue", "gray")
+        plot_colours = c( "#D95F02", "#7570B3", "lightgray")
     )
     
     df_cross <- calculate_cross_functions(image, 
@@ -208,7 +208,7 @@ for (i in 1:500){
                 immune_ring_infiltration_proportions = c(0.2))),
         plot_image = TRUE,
         plot_categories = c("Cell_A", "Cell_B", "Others"),
-        plot_colours = c("red", "darkblue", "gray")
+        plot_colours = c( "#D95F02", "#7570B3", "lightgray")
     )
     
     df_cross <- calculate_cross_functions(image, 
@@ -247,7 +247,7 @@ for (i in 3:500){
                 immune_ring_infiltration_proportions = c(0.2))),
         plot_image = TRUE,
         plot_categories = c("Cell_A", "Cell_B", "Others"),
-        plot_colours = c("red", "darkblue", "gray")
+        plot_colours = c( "#D95F02", "#7570B3", "lightgray")
     )
     
     df_cross <- calculate_cross_functions(image, 
@@ -289,7 +289,7 @@ for (i in 1:500){
                 immune_ring_infiltration_proportions = c(0.2))),
         plot_image = TRUE,
         plot_categories = c("Cell_A", "Cell_B", "Others"),
-        plot_colours = c("red", "darkblue", "gray")
+        plot_colours = c( "#D95F02", "#7570B3", "lightgray")
     )
     
     df_cross <- calculate_cross_functions(image, 
