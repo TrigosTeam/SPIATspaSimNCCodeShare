@@ -103,7 +103,7 @@ dim(MET)[2]
 categories_of_interest <- unique(MET$Cell.Type)
 plot_cell_categories(MET, categories_of_interest,
                      colour_vector = c("lightgray","#D95F02","#7570B3","#66A61E","#E7298A"),
-                     "Cell.Type", layered = TRUE, cex = 0.2)
+                     "Cell.Type", cex = 0.2)
 start <- Sys.time()
 sce_border_MEL3 <-identify_bordering_cells(MET, 
                                            reference_cell = "MEL", n_to_exclude = 100)
@@ -121,7 +121,7 @@ dim(REL)[2]
 categories_of_interest <- unique(REL$Cell.Type)
 plot_cell_categories(REL, c("MEL" ,"T", "DC", "B", "Undefined"),
                      colour_vector = c("#D95F02","#7570B3","#D95F02","#66A61E","lightgray"),
-                     "Cell.Type", cex = 0.2, layered = TRUE)
+                     "Cell.Type", cex = 0.2)
 start <- Sys.time()
 sce_border_MEL2 <-identify_bordering_cells(REL, 
                                            reference_cell = "MEL", n_to_exclude = 100)

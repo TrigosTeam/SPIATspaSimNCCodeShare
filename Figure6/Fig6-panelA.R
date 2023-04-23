@@ -20,3 +20,9 @@ g <- plot_cell_categories(spe, categories_of_interest = c( "Tumor", "Undefined",
                           cex = 0.8, layered = T)
 g
 dev.off()
+
+
+spe_border <- identify_bordering_cells(spe, reference_cell = "Tumor", feature_colname = "Cell.Type")
+spe_dist <- calculate_distance_to_margin(spe_border)
+spe_struc <- define_structure(spe_dist, cell_types_of_interest = "Immune", feature_colname = "Cell.Type")
+plot_cell_categories(spe, feature_colname = "Structure")
